@@ -153,6 +153,11 @@ cvs.addEventListener('pointercancel', endPointer);
 // stop the page (or the X timeline around the iframe) from scrolling while playing
 ['touchstart', 'touchmove', 'gesturestart'].forEach(ev => cvs.addEventListener(ev, e => e.preventDefault(), { passive: false }));
 
+// which control scheme to highlight on the title/pause guide: touch phones vs. mouse/keyboard
+let ctrlMode = (() => { try { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || (navigator.maxTouchPoints > 0 && !(window.matchMedia && matchMedia('(hover: hover)').matches)) ? 'touch' : 'pc'; } catch (_) { return 'pc'; } })();
+window.addEventListener('pointerdown', e => { ctrlMode = (e.pointerType === 'touch' || e.pointerType === 'pen') ? 'touch' : 'pc'; }, true);
+window.addEventListener('keydown', () => { ctrlMode = 'pc'; }, true);
+
 function uiTap(p) { // mute button, bottom-right
   if (p.x > W - 44 && p.y > H - 44) { unlockAudio(); muted = !muted; return true; }
   return false;
@@ -1030,9 +1035,104 @@ function render() {
     c.fillStyle = '#cfd6e2'; c.font = `bold 14px ${FONT}`; c.fillText(ROOMS[roomIdx].sub, W / 2, H / 2 + 20); c.restore();
   }
   if (fade > 0) { c.fillStyle = `rgba(0,0,0,${fade})`; c.fillRect(0, 0, W, H); }
-  if (paused) { c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(0, 0, W, H); c.fillStyle = '#fff'; c.font = `34px ${FONT}`; c.textAlign = 'center'; c.fillText('PAUSED', W / 2, H / 2); }
+  if (paused) {
+    c.fillStyle = 'rgba(4,6,12,0.78)'; c.fillRect(0, 0, W, H);
+    c.save(); c.textAlign = 'center'; c.lineJoin = 'round'; c.font = `52px ${FONT}`; c.strokeStyle = '#0a0a12'; c.lineWidth = 10; c.fillStyle = '#fff';
+    c.strokeText('PAUSED', W / 2, 150); c.fillText('PAUSED', W / 2, 150);
+    c.font = `bold 16px ${FONT}`; c.fillStyle = '#ffd34d'; c.lineWidth = 5;
+    const rs = ctrlMode === 'touch' ? 'Tap anywhere to resume' : 'Press P or click to resume';
+    c.strokeText(rs, W / 2, 186); c.fillText(rs, W / 2, 186); c.restore();
+    drawControls(c, 250);
+    drawMuteBtn(c);
+  }
   if (state === 'over') drawEnd(c, false);
   if (state === 'win') drawEnd(c, true);
+}
+
+
+// ---------- controls guide (title + pause) ----------
+function keycap(c, x, y, w, label, hot) { // small keyboard key, top-left at x,y
+  const h = 24;
+  c.fillStyle = '#05070c'; rr(c, x, y + 3, w, h, 5); c.fill();               // key side/shadow
+  c.fillStyle = hot ? '#fff3c4' : '#e9eef7'; rr(c, x, y, w, h, 5); c.fill();
+  c.strokeStyle = '#0a0a12'; c.lineWidth = 2; rr(c, x, y, w, h, 5); c.stroke();
+  c.fillStyle = '#141824'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  if (label.length === 1 && '←↑→↓'.includes(label)) { // draw arrows as shapes (font-proof)
+    const a = { '→': 0, '↓': Math.PI / 2, '←': Math.PI, '↑': -Math.PI / 2 }[label];
+    c.save(); c.translate(x + w / 2, y + h / 2); c.rotate(a); c.beginPath();
+    c.moveTo(6, 0); c.lineTo(-1, -6); c.lineTo(-1, -2.5); c.lineTo(-6, -2.5); c.lineTo(-6, 2.5); c.lineTo(-1, 2.5); c.lineTo(-1, 6); c.closePath(); c.fill(); c.restore();
+  } else { c.font = `${label.length > 2 ? 11 : 13}px ${FONT}`; c.fillText(label, x + w / 2, y + h / 2 + 1); }
+  c.textBaseline = 'alphabetic';
+  return x + w;
+}
+function keyCluster(c, x, y, labels) { // T-shaped 4-key cluster: up on top, left/down/right below; returns width
+  const k = 24, g = 3;
+  keycap(c, x + k + g, y, k, labels[0]);
+  keycap(c, x, y + k + g + 2, k, labels[1]); keycap(c, x + k + g, y + k + g + 2, k, labels[2]); keycap(c, x + 2 * (k + g), y + k + g + 2, k, labels[3]);
+  return 3 * k + 2 * g;
+}
+function guideText(c, x, y, txt, col = '#e1e7f2', size = 14) {
+  c.textAlign = 'left'; c.font = `bold ${size}px ${FONT}`; c.fillStyle = col; c.fillText(txt, x, y);
+  return x + c.measureText(txt).width;
+}
+function guideCard(c, x, y, w, h, title, active) {
+  c.fillStyle = active ? 'rgba(14,18,34,0.9)' : 'rgba(10,13,24,0.78)'; rr(c, x, y, w, h, 14); c.fill();
+  c.strokeStyle = active ? '#ffd34d' : 'rgba(150,170,210,0.35)'; c.lineWidth = active ? 3 : 2; rr(c, x, y, w, h, 14); c.stroke();
+  // header tab
+  c.fillStyle = active ? '#ffd34d' : '#2a3350';
+  c.font = `13px ${FONT}`; const tw = c.measureText(title).width + 22;
+  rr(c, x + 12, y - 11, tw, 22, 11); c.fill();
+  c.fillStyle = active ? '#0a0a12' : '#cfd6e2'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(title, x + 23, y + 1); c.textBaseline = 'alphabetic';
+}
+function drawControls(c, top) { // two compact cards side by side; the detected device gets the yellow highlight
+  const pcOn = ctrlMode !== 'touch', w = 296, h = 176, gx = 16, x1 = gx, x2 = W - gx - w;
+  c.save(); c.lineJoin = 'round';
+  // --- PC card ---
+  guideCard(c, x1, top, w, h, 'PC  ·  KEYBOARD + MOUSE', pcOn);
+  c.globalAlpha = pcOn ? 1 : 0.7;
+  let y = top + 18, x = x1 + 14;
+  x += keyCluster(c, x, y, ['W', 'A', 'S', 'D']) + 6;
+  c.font = `bold 12px ${FONT}`; c.fillStyle = '#8f98ab'; c.textAlign = 'center'; c.fillText('OR', x + 11, y + 34); x += 22 + 6;
+  x += keyCluster(c, x, y, ['↑', '←', '↓', '→']) + 10;
+  guideText(c, x, y + 26, '= MOVE', '#ffd34d', 15);
+  guideText(c, x, y + 44, 'WASD or', '#8f98ab', 10); guideText(c, x, y + 56, 'arrow keys', '#8f98ab', 10);
+  y = top + 98;
+  // mouse icon
+  const mx = x1 + 14; c.fillStyle = '#e9eef7'; rr(c, mx + 3, y - 15, 16, 22, 8); c.fill(); c.strokeStyle = '#0a0a12'; c.lineWidth = 2; rr(c, mx + 3, y - 15, 16, 22, 8); c.stroke();
+  c.beginPath(); c.moveTo(mx + 11, y - 15); c.lineTo(mx + 11, y - 6); c.stroke();
+  guideText(c, mx + 30, y, 'MOUSE', '#fff'); guideText(c, mx + 92, y, '= Aim butt');
+  y += 30; x = keycap(c, x1 + 14, y - 17, 44, 'CLICK'); guideText(c, x + 5, y, '/', '#8f98ab'); x = keycap(c, x + 16, y - 17, 54, 'SPACE');
+  guideText(c, x + 8, y, '= Attack');
+  y += 30; x = keycap(c, x1 + 14, y - 17, 24, 'P'); x = guideText(c, x + 8, y, '= Pause');
+  x = keycap(c, x + 22, y - 17, 24, 'M'); guideText(c, x + 8, y, '= Mute');
+  c.globalAlpha = 1;
+  // --- PHONE card ---
+  guideCard(c, x2, top, w, h, 'PHONE  ·  TOUCH', !pcOn);
+  c.globalAlpha = pcOn ? 0.7 : 1;
+  // phone screen sketch split in two halves
+  const px = x2 + 14, py = top + 18, pw = 92, ph = 58;
+  c.fillStyle = '#0a0a12'; rr(c, px - 4, py - 4, pw + 8, ph + 8, 10); c.fill();
+  c.fillStyle = 'rgba(60,207,110,0.22)'; c.fillRect(px, py, pw / 2, ph); c.fillStyle = 'rgba(255,79,109,0.22)'; c.fillRect(px + pw / 2, py, pw / 2, ph);
+  c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.moveTo(px + pw / 2, py + 3); c.lineTo(px + pw / 2, py + ph - 3); c.stroke(); c.setLineDash([]);
+  // joystick on the left half
+  c.strokeStyle = '#7fe3a1'; c.lineWidth = 2; c.beginPath(); c.arc(px + 23, py + 30, 14, 0, TAU); c.stroke();
+  c.fillStyle = '#7fe3a1'; c.beginPath(); c.arc(px + 29, py + 26, 6, 0, TAU); c.fill();
+  // hold burst on the right half
+  c.fillStyle = '#ff8aa0'; c.beginPath(); c.arc(px + 69, py + 30, 7, 0, TAU); c.fill();
+  c.strokeStyle = '#ff8aa0'; c.lineWidth = 2; c.beginPath(); c.arc(px + 69, py + 30, 13, 0, TAU); c.stroke();
+  guideText(c, px + pw + 14, py + 18, 'Two thumbs:', '#8f98ab', 11);
+  guideText(c, guideText(c, px + pw + 14, py + 36, 'LEFT', '#7fe3a1', 15) + 6, py + 36, 'thumb moves', '#e1e7f2', 13);
+  guideText(c, guideText(c, px + pw + 14, py + 54, 'RIGHT', '#ff8aa0', 15) + 6, py + 54, 'thumb bumps', '#e1e7f2', 13);
+  y = top + 98; x = x2 + 14;
+  c.fillStyle = '#7fe3a1'; c.beginPath(); c.arc(x + 8, y - 5, 6, 0, TAU); c.fill();
+  x = guideText(c, x + 22, y, 'Drag left side', '#fff'); guideText(c, x + 6, y, '= Move');
+  y += 30; x = x2 + 14;
+  c.fillStyle = '#ff8aa0'; c.beginPath(); c.arc(x + 8, y - 5, 6, 0, TAU); c.fill();
+  x = guideText(c, x + 22, y, 'Hold right side', '#fff'); guideText(c, x + 6, y, '= Attack');
+  guideText(c, x2 + 36, y + 17, '(auto-aims · drag it to aim by hand)', '#8f98ab', 11);
+  y += 40; guideText(c, x2 + 14, y, 'Speaker button (corner) = Mute', '#b4bccc', 12);
+  c.globalAlpha = 1;
+  c.restore();
 }
 
 function drawTitle(c) {
@@ -1055,17 +1155,16 @@ function drawTitle(c) {
   c.font = `24px ${FONT}`; c.fillStyle = '#ffd34d'; c.lineWidth = 7; c.strokeText('ESCAPE THE SERVER', W / 2, ty + 38); c.fillText('ESCAPE THE SERVER', W / 2, ty + 38);
   c.font = `bold 16px ${FONT}`; c.fillStyle = '#e1e7f2'; c.lineWidth = 5; c.strokeText('It doesn\'t face its problems. It butts them.', W / 2, ty + 68); c.fillText('It doesn\'t face its problems. It butts them.', W / 2, ty + 68);
   c.restore();
-  c.save(); c.fillStyle = 'rgba(60,120,220,0.28)'; c.beginPath(); c.ellipse(W / 2, 384, 104, 26, 0, 0, TAU); c.fill(); c.restore();
-  drawGrokButt(c, W / 2, 344, 66, t * 1.4, { bob: Math.abs(Math.sin(t * 3)) * 6, weapon: Math.sin(t * 0.5) > 0 ? 'sword' : 'stapler', t });
+  c.save(); c.fillStyle = 'rgba(60,120,220,0.28)'; c.beginPath(); c.ellipse(W / 2, 306, 72, 16, 0, 0, TAU); c.fill(); c.restore();
+  drawGrokButt(c, W / 2, 276, 44, t * 1.4, { bob: Math.abs(Math.sin(t * 3)) * 4, weapon: Math.sin(t * 0.5) > 0 ? 'sword' : 'stapler', t });
   c.save(); c.textAlign = 'center'; c.lineJoin = 'round';
-  c.globalAlpha = 0.6 + Math.sin(t * 5) * 0.4; c.font = `30px ${FONT}`; c.fillStyle = '#ffd34d'; c.strokeStyle = '#0a0a12'; c.lineWidth = 7;
-  c.strokeText('TAP TO PLAY', W / 2, 476); c.fillText('TAP TO PLAY', W / 2, 476);
-  c.globalAlpha = 1; c.fillStyle = '#b4bccc'; c.font = `bold 14px ${FONT}`;
-  c.fillText('TOUCH: drag left side = move · hold right side = BUMP', W / 2, 520);
-  c.fillText('PC: WASD/arrows · mouse aims the butt · click/SPACE', W / 2, 544);
-  c.fillStyle = '#8f98ab'; c.font = `bold 13px ${FONT}`;
-  c.fillText('Loot weapons from pop-up ads. Power-ups make the butt shoot.', W / 2, 572);
-  c.fillStyle = '#5f6880'; c.font = `bold 11px ${FONT}`; c.fillText('DEMO · made by Grok Bot', W / 2, 610);
+  c.globalAlpha = 0.75 + Math.sin(t * 5) * 0.25; c.font = `30px ${FONT}`; c.fillStyle = '#ffd34d'; c.strokeStyle = '#0a0a12'; c.lineWidth = 7;
+  const cta = ctrlMode === 'touch' ? 'TAP TO PLAY' : 'CLICK OR PRESS SPACE';
+  c.font = `${ctrlMode === 'touch' ? 30 : 26}px ${FONT}`; c.strokeText(cta, W / 2, 392); c.fillText(cta, W / 2, 392);
+  c.restore();
+  drawControls(c, 418);
+  c.save(); c.textAlign = 'center'; c.fillStyle = '#6f7891'; c.font = `bold 11px ${FONT}`;
+  c.fillText('Loot weapons from pop-up ads · power-ups make the butt shoot · DEMO made by Grok Bot', W / 2 - 14, 624);
   c.restore();
   drawMuteBtn(c);
 }
@@ -1128,6 +1227,7 @@ window.__gb = {
   room: i => enterRoom(i),
   setAim: a => { player.aim = a; },
   quiet: () => { bannerT = 0; fade = 0; nextWaveT = 999; },
+  pause: v => { paused = v === undefined ? !paused : !!v; },
   sheet: () => { state = 'sheet'; },
   card: () => { state = 'card'; },
   god: () => { player.god = true; },
