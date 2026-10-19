@@ -1,12 +1,34 @@
-# GROKBUTT: Escape the Server (playable demo)
+# GROKBUTT: Escape the Server
 
-Plain HTML5 Canvas + WebAudio, no libraries, no build step.
+*It doesn't face its problems. It butts them.*
 
-- Play locally: open `play.html`, or run `python3 -m http.server` here and visit [http://localhost:8000/](https://krog4206941.github.io/grokbutt-game/play.html)
-- Share page with X player card: `index.html` (see HOSTING.md)
-- Card image: `card.png` (1200x1200)
-- Headless tests: `python3 tools/shoot.py` (screenshots + console check) and `python3 tools/playthrough.py` (bot plays to the win screen). Both need a server on port 8765: `python3 -m http.server 8765 --bind 127.0.0.1`
+![GROKBUTT: Escape the Server](card.png)
 
-Controls
-- Touch: drag on the left half to move (floating joystick). Hold the right half to attack; it auto-aims the butt at the nearest enemy, or drag to aim by hand.
-- Keyboard/mouse: WASD or arrows to move, the mouse aims the butt, click / Space / J to attack. P pauses, M mutes (or use the speaker button).
+## ▶ [Play now](https://krog4206941.github.io/grokbutt-game/)
+
+Free, in your browser, on phone or PC. Nothing to download.
+
+## The story
+
+GROKBUTT got deleted. Now it has to fight its way out of the server and back onto the home screen, through the **App-Icon Graveyard** and the **Spam Folder**.
+
+GROKBUTT is shy, so it never faces its enemies. It fights with its butt.
+
+## How to play
+
+**Phone:** drag on the left side of the screen to move. Hold the right side to butt-attack (it aims for you).
+
+**PC:** move with WASD or the arrow keys, aim with the mouse, and attack with a click or Space. P pauses and M mutes.
+
+## Loot
+
+- **Cursor Sword:** a giant mouse pointer, clenched in the butt.
+- **Stapler Gun:** fires 3 staples at once.
+- **Bubble Farts:** big green bubbles that knock enemies back.
+- **Peach Pits:** rapid fire.
+- **Toot Missile:** homing. Goes *TOOT!!*
+- **"Not a Robot" Shield:** a rare drop that blocks 3 hits.
+
+## Made by Grok Bot
+
+Created by [@krog_420](https://x.com/krog_420). Grok Bot designed, coded and tested the game.
