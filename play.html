@@ -9,11 +9,11 @@
   html,body{margin:0;width:100%;height:100%;background:#0b0d14;overflow:hidden;touch-action:none;
     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
   #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-  canvas{display:block;cursor:crosshair;touch-action:none}
+  canvas{display:block;cursor:crosshair;touch-action:none;outline:none}
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="game" width="640" height="640"></canvas></div>
+<div id="wrap"><canvas id="game" width="640" height="640" tabindex="0" aria-label="GROKBUTT game. Click to play and to use the keyboard."></canvas></div>
 <script src="game.js"></script>
 </body>
 </html>

@@ -18,7 +18,9 @@ GROKBUTT is shy, so it never faces its enemies. It fights with its butt.
 
 **Phone:** drag on the left side of the screen to move. Hold the right side to butt-attack (it aims for you).
 
-**PC:** move with WASD or the arrow keys, aim with the mouse, and attack with a click or Space. P pauses and M mutes.
+**PC:** click the game once first, so your keys go to the game and not to X. Then move with WASD or the arrow keys, aim with the mouse, and attack with a click or Space. P pauses and M mutes. If you click outside the game, it pauses until you click it again.
+
+**Clearing a room:** when the door at the top says **GO**, walk up to it, or click/tap the door. If you just wait, it takes you through by itself after 8 seconds.
 
 ## Loot
 

@@ -106,23 +106,44 @@ function toLogical(cx, cy) {
   const r = cvs.getBoundingClientRect();
   return { x: (cx - r.left) / r.width * W, y: (cy - r.top) / r.height * H };
 }
+// Keys the game uses. Inside the X player card the game only gets keys while its iframe has focus;
+// while it does, every game key is swallowed so it can never reach X's own shortcuts (J/K/L/Space/arrows...).
+const GAME_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyP', 'KeyM', 'KeyR', 'Enter', 'NumpadEnter']);
+let hasFocus = true;
+try { hasFocus = document.hasFocus(); } catch (_) {}
+cvs.tabIndex = 0;
+function grabFocus() {
+  try { window.focus(); } catch (_) {}
+  try { cvs.focus({ preventScroll: true }); } catch (_) { try { cvs.focus(); } catch (__) {} }
+  hasFocus = true;
+}
+function swallow(e) { if (GAME_KEYS.has(e.code)) { e.preventDefault(); e.stopPropagation(); } }
+window.addEventListener('keypress', swallow);
 window.addEventListener('keydown', e => {
+  swallow(e);
+  hasFocus = true;
+  if (e.repeat && (e.code === 'KeyP' || e.code === 'KeyM')) return; // holding P/M must not flicker pause/mute
   keys[e.code] = true; unlockAudio();
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
   if (e.code === 'KeyM') muted = !muted;
   if (state === 'title' && (e.code === 'Enter' || e.code === 'Space')) startGame();
   else if ((state === 'over' || state === 'win') && stateT > 0.8 && (e.code === 'Enter' || e.code === 'KeyR' || e.code === 'Space')) startGame();
   else if (state === 'play' && e.code === 'KeyP') paused = !paused;
 });
-window.addEventListener('keyup', e => { keys[e.code] = false; });
-window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; input.mouseDown = false; input.joy = null; input.fire = null; });
+window.addEventListener('keyup', e => { swallow(e); keys[e.code] = false; });
+window.addEventListener('blur', () => { // focus went to the X page (or another tab): stop, pause, ask for a click
+  for (const k in keys) keys[k] = false; input.mouseDown = false; input.joy = null; input.fire = null;
+  hasFocus = false;
+  if (state === 'play') paused = true;
+});
+window.addEventListener('focus', () => { hasFocus = true; });
 cvs.addEventListener('contextmenu', e => e.preventDefault());
 
 cvs.addEventListener('pointerdown', e => {
-  e.preventDefault(); unlockAudio();
+  e.preventDefault(); unlockAudio(); grabFocus();
   try { cvs.setPointerCapture(e.pointerId); } catch (_) {}
   const p = toLogical(e.clientX, e.clientY);
   if (uiTap(p)) return;
+  if (state === 'play' && !paused && doorOpen && inDoorTapZone(p)) { goThroughDoor(); return; }
   if (state === 'title') { startGame(); return; }
   if (state === 'over' || state === 'win') { if (stateT > 0.8) startGame(); return; }
   if (paused) { paused = false; return; }
@@ -151,7 +172,9 @@ function endPointer(e) {
 cvs.addEventListener('pointerup', endPointer);
 cvs.addEventListener('pointercancel', endPointer);
 // stop the page (or the X timeline around the iframe) from scrolling while playing
-['touchstart', 'touchmove', 'gesturestart'].forEach(ev => cvs.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+['touchstart', 'touchmove', 'gesturestart'].forEach(ev => cvs.addEventListener(ev, e => { if (ev === 'touchstart') grabFocus(); e.preventDefault(); }, { passive: false }));
+// any click/tap in the frame (also outside the square canvas, e.g. the side bars in a 520x500 card) takes focus
+['pointerdown', 'mousedown', 'click'].forEach(ev => window.addEventListener(ev, () => grabFocus(), true));
 
 // which control scheme to highlight on the title/pause guide: touch phones vs. mouse/keyboard
 let ctrlMode = (() => { try { return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || (navigator.maxTouchPoints > 0 && !(window.matchMedia && matchMedia('(hover: hover)').matches)) ? 'touch' : 'pc'; } catch (_) { return 'pc'; } })();
@@ -453,6 +476,7 @@ let roomBGs = [];
 // ---------- game state ----------
 let state = 'title', stateT = 0, paused = false;
 let player = null, enemies = [], bullets = [], ebullets = [], loot = [], pops = [], parts = [], spawns = [];
+let doorT = 0; const DOOR_AUTO = 8; // seconds after a room is cleared before the door pulls you through by itself
 let roomIdx = 0, waveIdx = -1, doorOpen = false, score = 0, shake = 0, hitstop = 0, fade = 0, bannerT = 0, timeAlive = 0, kills = 0, nextWaveT = 0;
 let obstacles = [];
 
@@ -468,7 +492,7 @@ function startGame() {
   state = 'play'; stateT = 0; paused = false;
 }
 function enterRoom(i) {
-  roomIdx = i; waveIdx = -1; doorOpen = false; bannerT = 2.4; fade = 1; nextWaveT = 1.2;
+  roomIdx = i; waveIdx = -1; doorOpen = false; doorT = 0; bannerT = 2.4; fade = 1; nextWaveT = 1.2;
   obstacles = obstacleRects(ROOMS[i]);
   enemies.length = 0; ebullets.length = 0; bullets.length = 0; spawns.length = 0; loot.length = 0;
   player.x = W / 2; player.y = H - 70;
@@ -495,17 +519,34 @@ function spawnEnemy(type, x, y) {
   enemies.push({ type, x, y, r: d.r, hp: d.hp, maxhp: d.hp, kx: 0, ky: 0, flash: 0, t: rnd(0, 5), cd: rnd(1.2, 2.5), face: Math.atan2(player.y - y, player.x - x), hop: rnd(0, 0.5), hv: null, wx: x, wy: y, wt: 0 });
   burst(x, y, 14, ['#6fb3ff', '#ffd34d', '#ff6b5e'], 160);
 }
+// door at the top-centre wall. Walking anywhere near it counts (generous zone), tapping/clicking it works too.
+const DOOR = { x: W / 2, y: 62 };
+function inDoorWalkZone(p) { return Math.abs(p.x - DOOR.x) < 110 && p.y < 150; }
+function inDoorTapZone(p) { return Math.abs(p.x - DOOR.x) < 95 && p.y < 135; }
+function goThroughDoor() {
+  if (!doorOpen || state !== 'play') return;
+  SFX.door();
+  if (roomIdx === 0) enterRoom(1);
+  else { state = 'win'; stateT = 0; score += Math.max(0, 3000 - Math.floor(timeAlive) * 10); }
+}
 function hitsObstacle(x, y, r) {
   for (const o of obstacles) { const cx = clamp(x, o.x, o.x + o.w), cy = clamp(y, o.y, o.y + o.h); if ((x - cx) ** 2 + (y - cy) ** 2 < r * r) return true; }
   return false;
 }
-function collide(e) {
+function collide(e, slide) {
   for (const o of obstacles) {
     const cx = clamp(e.x, o.x, o.x + o.w), cy = clamp(e.y, o.y, o.y + o.h);
     const dx = e.x - cx, dy = e.y - cy, d2 = dx * dx + dy * dy;
     if (d2 < e.r * e.r) {
       if (d2 === 0) { e.y = o.y + o.h + e.r; continue; }
       const d = Math.sqrt(d2); e.x = cx + dx / d * e.r; e.y = cy + dy / d * e.r;
+      if (slide) { // pushing flat into a face: slip toward the nearer corner (keeps a held key from getting stuck)
+        const { mx, my, dt } = slide, s = 190 * dt;
+        if (Math.abs(dy) >= Math.abs(dx) && Math.abs(my) > 0.3 && Math.sign(my) === -Math.sign(dy) && Math.abs(mx) < 0.5)
+          e.x += (e.x < o.x + o.w / 2 ? -s : s);
+        else if (Math.abs(dx) > Math.abs(dy) && Math.abs(mx) > 0.3 && Math.sign(mx) === -Math.sign(dx) && Math.abs(my) < 0.5)
+          e.y += (e.y < o.y + o.h / 2 ? -s : s);
+      }
     }
   }
   e.x = clamp(e.x, 16 + e.r, W - 16 - e.r);
@@ -684,10 +725,10 @@ function update(dt) {
       }
     }
   } else { p.x += p.vx * dt; p.y += p.vy * dt; }
-  collide(p);
+  collide(p, { mx, my, dt });
   p.bob = p.moving ? Math.abs(Math.sin(p.t * 11)) * 4 : Math.abs(Math.sin(p.t * 2.5)) * 1.2;
   p.cd -= dt; p.inv -= dt; p.blush = Math.max(0, p.blush - dt * 1.6); p.flash = Math.max(0, p.flash - dt); p.swing = Math.max(0, p.swing - dt * 5);
-  const wantAttack = input.mouseDown || keys.Space || keys.KeyJ || !!input.fire;
+  const wantAttack = input.mouseDown || keys.Space || !!input.fire;
   if (wantAttack && p.cd <= 0) attack();
   if (p.power) { // power-ups auto-fire from the butt
     p.powerT -= dt; p.powerCd -= dt;
@@ -698,16 +739,16 @@ function update(dt) {
   if (!enemies.length && !spawns.length) {
     if (waveIdx < ROOMS[roomIdx].waves.length - 1) { nextWaveT -= dt; if (nextWaveT <= 0) { startWave(); nextWaveT = 1.6; } }
     else if (!doorOpen) {
-      doorOpen = true; SFX.door(); score += 500;
+      doorOpen = true; doorT = 0; SFX.door(); score += 500;
       pop(W / 2, H / 2 - 60, roomIdx === 0 ? 'GRAVEYARD CLEARED!' : 'SPAM FOLDER CLEARED!', '#7fe3a1', 28, 1.6);
     }
   }
   for (const s of spawns) { s.t -= dt; if (s.t <= 0) { spawnEnemy(s.type, s.x, s.y); s.done = true; } }
   spawns = spawns.filter(s => !s.done);
-  if (doorOpen && Math.abs(p.x - W / 2) < 48 && p.y < 64 + p.r + 14) {
-    if (roomIdx === 0) { enterRoom(1); SFX.door(); }
-    else { state = 'win'; stateT = 0; score += Math.max(0, 3000 - Math.floor(timeAlive) * 10); SFX.door(); }
-    return;
+  if (doorOpen) {
+    doorT += dt;
+    // walk anywhere near the door, or wait: after DOOR_AUTO seconds it pulls you through by itself
+    if (inDoorWalkZone(p) || doorT >= DOOR_AUTO) { goThroughDoor(); return; }
   }
   // enemies
   for (const e of enemies) {
@@ -907,10 +948,24 @@ function drawDoor(c) {
     c.fillStyle = doorOpen ? '#e9f3ff' : '#6a7080'; c.font = `bold 11px ${FONT}`; c.fillText(doorOpen ? 'HOME SCREEN' : 'HOME · LOCKED', x, y - 18);
   }
   if (doorOpen && player) {
-    c.globalAlpha = 0.5 + Math.sin(player.t * 6) * 0.5;
-    c.fillStyle = '#ffd34d'; c.font = `16px ${FONT}`; c.lineJoin = 'round'; c.strokeStyle = '#000'; c.lineWidth = 4;
-    c.strokeText('▲ GO ▲', x, y + 30); c.fillText('▲ GO ▲', x, y + 30);
+    c.save(); c.globalAlpha = 0.18 + Math.sin(player.t * 5) * 0.08; c.fillStyle = '#ffd34d'; // the walk-in zone glows
+    rr(c, x - 110, 64, 220, 86, 18); c.fill(); c.restore();
+    c.globalAlpha = 0.6 + Math.sin(player.t * 6) * 0.4;
+    c.fillStyle = '#ffd34d'; c.font = `18px ${FONT}`; c.lineJoin = 'round'; c.strokeStyle = '#000'; c.lineWidth = 5;
+    c.strokeText('▲ GO ▲', x, y + 32); c.fillText('▲ GO ▲', x, y + 32);
+    c.globalAlpha = 1;
+    const left = Math.max(0, Math.ceil(DOOR_AUTO - doorT));
+    const msg = (ctrlMode === 'touch' ? 'TAP THE DOOR' : 'WALK UP OR CLICK THE DOOR') + ` · AUTO IN ${left}`;
+    c.font = `bold 11px ${FONT}`; c.lineWidth = 4; c.strokeText(msg, x, y + 52); c.fillStyle = '#fff'; c.fillText(msg, x, y + 52);
   }
+  c.restore();
+}
+function drawDoorGuide(c) { // bouncing arrow next to GrokButt pointing at the door
+  if (!doorOpen || !player || state !== 'play' || inDoorWalkZone(player)) return;
+  const p = player, a = Math.atan2(DOOR.y + 40 - p.y, DOOR.x - p.x), r = 44 + Math.abs(Math.sin(p.t * 6)) * 8;
+  c.save(); c.translate(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r); c.rotate(a);
+  c.fillStyle = '#ffd34d'; c.strokeStyle = '#120a14'; c.lineWidth = 3; c.lineJoin = 'round';
+  c.beginPath(); c.moveTo(16, 0); c.lineTo(-6, -12); c.lineTo(-6, -5); c.lineTo(-16, -5); c.lineTo(-16, 5); c.lineTo(-6, 5); c.lineTo(-6, 12); c.closePath(); c.stroke(); c.fill();
   c.restore();
 }
 
@@ -1005,6 +1060,7 @@ function render() {
     drawGrokButt(c, p.x, p.y, p.r, p.aim, { bob: p.bob, weapon: p.weapon, t: p.t, swing: p.swing, blush: p.blush, flash: p.flash, alpha: blink ? 0.45 : 1, squint: p.lunge > 0 });
     if (p.shield > 0) { c.save(); c.translate(p.x + Math.cos(p.aim + Math.PI) * 32, p.y + Math.sin(p.aim + Math.PI) * 32 - p.bob); drawPowerIcon(c, 'shield', 0.7); c.restore(); }
   }
+  drawDoorGuide(c);
   for (const b of bullets) drawBullet(c, b);
   for (const b of ebullets) drawBullet(c, b);
   for (const q of parts) {
@@ -1040,13 +1096,24 @@ function render() {
     c.save(); c.textAlign = 'center'; c.lineJoin = 'round'; c.font = `52px ${FONT}`; c.strokeStyle = '#0a0a12'; c.lineWidth = 10; c.fillStyle = '#fff';
     c.strokeText('PAUSED', W / 2, 150); c.fillText('PAUSED', W / 2, 150);
     c.font = `bold 16px ${FONT}`; c.fillStyle = '#ffd34d'; c.lineWidth = 5;
-    const rs = ctrlMode === 'touch' ? 'Tap anywhere to resume' : 'Press P or click to resume';
+    const rs = ctrlMode === 'touch' ? 'Tap anywhere to resume' : (!hasFocus ? 'Click the game to resume' : 'Press P or click to resume');
     c.strokeText(rs, W / 2, 186); c.fillText(rs, W / 2, 186); c.restore();
     drawControls(c, 250);
     drawMuteBtn(c);
   }
   if (state === 'over') drawEnd(c, false);
   if (state === 'win') drawEnd(c, true);
+  drawFocusHint(c);
+}
+function drawFocusHint(c) { // shown when the keyboard isn't reaching the game (focus is on the X page)
+  if (hasFocus || ctrlMode === 'touch') return;
+  c.save(); c.setTransform(VIEW * DPR, 0, 0, VIEW * DPR, 0, 0);
+  const txt = 'Click the game to use keyboard', y = state === 'title' ? 340 : 222;
+  c.font = `bold 15px ${FONT}`; const w = c.measureText(txt).width + 34;
+  c.fillStyle = 'rgba(8,10,16,0.88)'; rr(c, W / 2 - w / 2, y - 20, w, 32, 16); c.fill();
+  c.strokeStyle = '#ffd34d'; c.lineWidth = 2; rr(c, W / 2 - w / 2, y - 20, w, 32, 16); c.stroke();
+  c.fillStyle = '#ffd34d'; c.textAlign = 'center'; c.fillText(txt, W / 2, y + 1);
+  c.restore();
 }
 
 
@@ -1163,6 +1230,7 @@ function drawTitle(c) {
   c.font = `${ctrlMode === 'touch' ? 30 : 26}px ${FONT}`; c.strokeText(cta, W / 2, 392); c.fillText(cta, W / 2, 392);
   c.restore();
   drawControls(c, 418);
+  drawFocusHint(c);
   c.save(); c.textAlign = 'center'; c.fillStyle = '#6f7891'; c.font = `bold 11px ${FONT}`;
   c.fillText('Loot weapons from pop-up ads · power-ups make the butt shoot · DEMO made by Grok Bot', W / 2 - 14, 624);
   c.restore();
@@ -1226,6 +1294,10 @@ window.__gb = {
   drop: (k, x, y) => dropLoot(x, y, k),
   room: i => enterRoom(i),
   setAim: a => { player.aim = a; },
+  clearRoom: () => { enemies.length = 0; spawns.length = 0; ebullets.length = 0; waveIdx = ROOMS[roomIdx].waves.length - 1; }, // skip to "room cleared" without moving the player
+  get doorT() { return doorT; },
+  get focused() { return hasFocus; },
+  get paused() { return paused; },
   quiet: () => { bannerT = 0; fade = 0; nextWaveT = 999; },
   pause: v => { paused = v === undefined ? !paused : !!v; },
   sheet: () => { state = 'sheet'; },
