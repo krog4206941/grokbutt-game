@@ -3,6 +3,8 @@ import { GLTFLoader } from './assets/three/GLTFLoader.js';
 import { RoomEnvironment } from './assets/three/RoomEnvironment.js';
 import { Sfx, renderLog } from './sfx.js';
 import { PLACES, getPlace } from './scenes.js';
+import { initExtras } from './extras.js';
+let X = null;
 
 const Q = new URLSearchParams(location.search);
 const sfx = new Sfx();
@@ -70,6 +72,7 @@ const U = {
   uEyeC: { value: [new THREE.Vector4(0, 0, 0, 0), new THREE.Vector4(0, 0, 0, 0)] },    // slant, spin, tear, tearPhase
   uMarks: { value: Array.from({ length: 8 }, () => new THREE.Vector4(0, 0, 0, 0)) },
   uRed: { value: 0 },
+  uHeart: { value: 0 },
 };
 const mat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 0.28, specularIntensity: 1 });
 mat.onBeforeCompile = (sh) => {
@@ -80,7 +83,8 @@ mat.onBeforeCompile = (sh) => {
   sh.fragmentShader = sh.fragmentShader
     .replace('#include <common>', `#include <common>
 varying vec3 vRest; varying float vCrease;
-uniform vec4 uEyeA[2]; uniform vec4 uEyeB[2]; uniform vec4 uEyeC[2]; uniform vec4 uMarks[8]; uniform float uRed;
+uniform vec4 uEyeA[2]; uniform vec4 uEyeB[2]; uniform vec4 uEyeC[2]; uniform vec4 uMarks[8]; uniform float uRed; uniform float uHeart;
+float sdHeart(vec2 p){ p.x=abs(p.x); if(p.y+p.x>1.0){ vec2 a=p-vec2(0.25,0.75); return sqrt(dot(a,a))-0.35355; } vec2 b=p-vec2(0.0,1.0); vec2 c=p-0.5*max(p.x+p.y,0.0); return sqrt(min(dot(b,b),dot(c,c)))*sign(p.x-p.y); }
 float gbEye; float gbCoat; float gbTear;
 float sdSeg(vec2 p, vec2 a, vec2 b){ vec2 pa=p-a, ba=b-a; float h=clamp(dot(pa,ba)/dot(ba,ba),0.,1.); return length(pa-ba*h); }
 float sdArc(vec2 p, vec2 sc, float ra, float rb){ p.x=abs(p.x); return ((sc.y*p.x>sc.x*p.y)?length(p-sc*ra):abs(length(p)-ra))-rb; }
@@ -101,6 +105,7 @@ float eyeSD(vec3 n, int i, float side){
   float e = mix(cap, chev, B.y);
   float lid = q.y - (B.w - C.x*aa);              // eyelid cut from the top (sleepy / angry slant)
   e = max(e, lid); e = mix(e, arc, B.z);
+  e = mix(e, sdHeart(vec2(q.x, q.y)/0.32 + vec2(0.0, 0.55))*0.32, uHeart);   // secret 69: heart eyes
   return e * A.z;
 }
 float tearSD(vec3 n, int i, float side){
@@ -163,6 +168,8 @@ new GLTFLoader().load('./assets/grokbutt.glb', (g) => {
     nbList[fill[a]++] = b; nbList[fill[a]++] = c; nbList[fill[b]++] = a; nbList[fill[b]++] = c; nbList[fill[c]++] = a; nbList[fill[c]++] = b; }
   geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1.8); geo.boundingBox = new THREE.Box3(new THREE.Vector3(-1.8, -1.8, -1.8), new THREE.Vector3(1.8, 1.8, 1.8));
   mesh = new THREE.Mesh(geo, mat); mesh.position.y = 1.0; pivot.add(mesh);
+  pivot.updateMatrixWorld(true);
+  X = initExtras({ scene, mesh, rest, disp, N, sfx, S, U, renderer, exprName: () => exprName, showCombo, placeId: () => place ? place.id : 'pond', render: () => { placeCam(); renderer.render(scene, camera); }, test: Q.has('test') || !!navigator.webdriver });
   window.__ready = true;
 });
 function sst(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
@@ -207,16 +214,18 @@ function slap(p, nIn) {
   S.combo = dt < 0.9 ? S.combo + 1 : 1; S.lastSlap = S.t;
   S.slaps++; S.slapTimes.push(S.t);
   const n = nIn || p.clone().normalize();
-  const amt = (butt ? 4.2 : 3.0) * str;
-  impulse(p, n.clone().multiplyScalar(-1), amt, 0.16);
-  S.JV.addScaledVector(n, -(butt ? 3.6 : 1.4) * str);
-  S.squashV -= (butt ? 2.6 : 1.8) * str;
+  const tmul = X ? X.toolMul() : 1;
+  const amt = (butt ? 4.2 : 3.0) * str * tmul;
+  impulse(p, n.clone().multiplyScalar(-1), amt, tmul > 1.5 ? 0.3 : 0.16);
+  S.JV.addScaledVector(n, -(butt ? 3.6 : 1.4) * str * tmul);
+  S.squashV -= (butt ? 2.6 : 1.8) * str * Math.min(tmul, 1.5);
   S.tiltXV += (p.z > 0 ? -1 : 1) * 1.6 * str; S.tiltZV += -p.x * 1.6 * str;
   addMark(p, 1);
   S.red = Math.min(1, S.red + (butt ? 0.07 : 0.035)); S.redHold = 1.5;
   S.shockT = S.t;
   const pitch = 0.85 + Math.random() * 0.35 + fast * 0.1;
-  sfx.play('slap', { str: Math.min(1, str * (butt ? 1 : 0.85)), pitch });
+  const tm = X ? X.toolMul() : 1;
+  if (!X || X.tool() === 'hand' || X.tool() === 'giant') sfx.play('slap', { str: Math.min(1, str * (butt ? 1 : 0.85) * Math.min(1, tm)), pitch });
   sfx.play('wobble', { str: str, pitch: 0.9 + Math.random() * 0.2 });
   // reactions
   const recent = S.slapTimes.filter(t => S.t - t < 1.6).length;
@@ -224,10 +233,11 @@ function slap(p, nIn) {
   if (many >= 25) S.angry = 2.6; else if (recent >= 8) S.dizzy = Math.max(S.dizzy, 1.6);
   const ms = [10, 25, 50, 100, 200, 500, 1000];
   if (ms.includes(S.combo)) showCombo('COMBO x' + S.combo);
+  if (X) X.onSlap(p, n, str * tmul, str > 0.95 || tmul > 1.5);
   if (S.combo > S.bestCombo) { S.bestCombo = S.combo; localStorage.setItem('gb_best_combo', S.bestCombo); }
 }
 let comboTimer = 0;
-function showCombo(txt) { const c = $('combo'); c.textContent = txt; c.style.opacity = 1; comboTimer = 1.4; }
+function showCombo(txt, d) { const c = $('combo'); c.textContent = txt; c.style.opacity = 1; comboTimer = d || 1.4; }
 function fart(p) {
   sfx.play('toot', {}); S.squashV -= 1.2; S.JV.y += 1.5;
   const wp = mesh.localToWorld(new THREE.Vector3(0, -0.45, -1.05));
@@ -347,7 +357,7 @@ function throwIt(vx, vy) {
 // ---------- per-frame update ----------
 const _v = new THREE.Vector3();
 function update(dt) {
-  S.t += dt; if (place) place.update(S.t);
+  S.t += dt; if (place) place.update(S.t); if (X) X.update(dt);
   S.idle += dt;
   // --- body interaction modes
   if (act && (act.kind === 'press' || act.kind === 'drag') && mesh) {
@@ -569,7 +579,7 @@ requestAnimationFrame(frame);
 // ---------- test / capture hooks ----------
 window.__gb = {
   S, step(dt, n = 1) { for (let i = 0; i < n; i++) update(dt); placeCam(); renderer.render(scene, camera); },
-  expr: () => exprName, setExpr(n) { forced = n || null; },
+  X: () => X, expr: () => exprName, setExpr(n) { forced = n || null; },
   slapAt(x, y) { const h = hit(x, y); if (h) slap(h.p, h.n); return !!h; },
   hit, down, move, up, ptrs, setYaw(y) { S.yaw = y; S.yawV = 0; S.yawTarget = null; }, setPitch(p) { S.pitch = p; },
   projectLocal(x, y, z) { const v = mesh.localToWorld(new THREE.Vector3(x, y, z)).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; },

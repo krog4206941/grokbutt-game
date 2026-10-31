@@ -29,13 +29,20 @@ canvas{display:block;position:fixed;inset:0;width:100%;height:100%;cursor:grab}
 .credit{position:absolute;left:18px;bottom:14px;font-size:12px;letter-spacing:1px;color:#8d7d5a}
 .credit a{color:#d8b25a;pointer-events:auto;text-decoration:none}
 button{position:absolute;pointer-events:auto;background:rgba(20,20,22,.7);color:#d8b25a;border:1px solid #5a4c2c;font:inherit;font-size:13px;letter-spacing:1px;padding:6px 10px;border-radius:6px;cursor:pointer}
-#mute{right:16px;top:14px}#turn{right:16px;top:50px}#place{right:16px;top:86px}
+#menu{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:5px;pointer-events:none}
+#menu button,#mbtn{position:static;min-width:132px;text-align:left}
+#mbtn{display:none;position:absolute;right:12px;top:12px;min-width:0}
+#chal{color:#d8b25a}
+#share{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:rgba(8,9,11,.82);z-index:6;pointer-events:auto}
+#share img{max-width:82vw;max-height:62vh;border:1px solid #5a4c2c;border-radius:6px}
+#share .row{display:flex;gap:10px}
+#share a,#share button{position:static;color:#d8b25a;text-decoration:none;border:1px solid #5a4c2c;background:rgba(20,20,22,.9);padding:8px 14px;border-radius:6px;font-size:14px;letter-spacing:1px}
 #fade{position:fixed;inset:0;background:#0b0d10;opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:5}
 .scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.035) 0 1px,transparent 1px 3px)}
 .z{position:absolute;font-size:22px;font-weight:bold;color:#cfc6a8;pointer-events:none;animation:zz 2.6s ease-out forwards}
 @keyframes zz{0%{opacity:0;transform:translate(0,0) scale(.7)}20%{opacity:.85}100%{opacity:0;transform:translate(28px,-90px) scale(1.3)}}
 #cur{position:fixed;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:2px solid rgba(232,200,120,.8);background:rgba(232,200,120,.12);pointer-events:none;display:none;transition:transform .08s}
-@media (max-width:600px){.title{font-size:16px}.stat{font-size:12px}.hint{font-size:11px;bottom:38px;padding:0 8px}#combo{font-size:30px}}
+@media (max-width:600px){.title{font-size:16px}.stat{font-size:12px}.hint{font-size:11px;bottom:38px;padding:0 8px}#combo{font-size:30px}#mbtn{display:block}#menu{display:none;top:48px;right:12px;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;max-width:300px}#menu.open{display:flex;background:rgba(12,13,15,.88);padding:8px;border-radius:8px;pointer-events:auto}#menu button{min-width:0;font-size:12px;padding:6px 8px}}
 </style>
 <script type="importmap">{"imports":{"three":"./assets/three/three.module.js"}}</script>
 </head>
@@ -43,13 +50,22 @@ button{position:absolute;pointer-events:auto;background:rgba(20,20,22,.7);color:
 <div id="hud">
   <div class="tl"><div class="title">GROKBUTT SLAP</div>
     <div class="stat" id="stat">SLAPS 0000 · SPS 0.0</div>
-    <div class="stat" id="best">BEST 0.0 SPS · COMBO x0</div></div>
+    <div class="stat" id="best">BEST 0.0 SPS · COMBO x0</div>
+    <div class="stat" id="chal"></div></div>
   <div id="combo"></div><div id="chip"></div>
   <div class="hint">slap · poke · pull · massage · tickle · fling · hold butt 1.5s · pinch · drag bg to spin</div>
   <div class="credit">Made by Krog &amp; Grok Bot · <a href="https://x.com/grokbutt69" target="_blank" rel="noopener">@grokbutt69</a></div>
-  <button id="mute">🔊 SOUND</button><button id="turn">↻ TURN</button><button id="place">⛰ PLACE: POND</button>
+  <button id="mbtn">☰ MENU</button>
+  <div id="menu">
+    <button id="chalb">🏁 CHALLENGE</button><button id="snap">📸 SNAP</button>
+    <button id="tool">✋ TOOL: HAND</button><button id="wear">🎩 WEAR: NONE</button>
+    <button id="place">⛰ PLACE: POND</button><button id="weather">☁ WEATHER: OFF</button><button id="turn">↻ TURN</button>
+    <button id="mute">🔊 SOUND</button><button id="voice">🗣 VOICE: ON</button><button id="music">♪ MUSIC: OFF</button>
+  </div>
 </div>
 <div class="scan"></div><div id="cur"></div><div id="fade"></div>
 <script type="module" src="./main.js"></script>
+<div id="share"><img id="snapimg" alt="GROKBUTT snap"><div class="row"><a id="snapdl" href="#">⬇ SAVE PNG</a><a id="snapx" href="#" target="_blank" rel="noopener">Share on X</a><button id="snapclose">✕ CLOSE</button></div></div>
+<script>document.getElementById('mbtn').onclick=()=>document.getElementById('menu').classList.toggle('open');</script>
 </body>
 </html>
