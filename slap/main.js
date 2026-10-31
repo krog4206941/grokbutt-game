@@ -7,7 +7,7 @@ import { initExtras } from './extras.js';
 let X = null;
 
 const Q = new URLSearchParams(location.search);
-const sfx = new Sfx();
+const sfx = new Sfx(); window.__sfx = sfx;
 const $ = id => document.getElementById(id);
 
 // ---------- renderer / scene ----------

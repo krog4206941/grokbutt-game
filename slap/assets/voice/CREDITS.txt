@@ -1,0 +1,10 @@
+GROKBUTT SLAP - voice clips
+All clips are CC0 1.0 (public domain dedication, https://creativecommons.org/publicdomain/zero/1.0/).
+No attribution required; credited here anyway. Trimmed (<0.6 s), high-passed, faded and peak-normalized; mono ogg + mp3.
+
+kyaa.ogg/.mp3  <- "Japanese Scream "Kyaa!!"" by AyaDrevis
+               https://freesound.org/people/AyaDrevis/sounds/648533/   (CC0)
+nya1/nya2/nya3 <- "anime cat girl .wav" by KurireeVA (three short cute lines)
+               https://freesound.org/people/KurireeVA/sounds/476588/   (CC0)
+ouch.ogg/.mp3  <- "Ouch !" by Legnalegna55
+               https://freesound.org/people/Legnalegna55/sounds/547344/  (CC0)
