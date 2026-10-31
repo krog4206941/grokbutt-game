@@ -84,13 +84,31 @@ export function initExtras(G) {
       worn.userData.lens[0].rotation.z = lensS[0] + w; worn.userData.lens[1].rotation.z = lensS[1] - w; worn.position.y += lensS[2]; }
   }
   // ---------- TOOL ----------
-  function handGeo(m) { const g = new THREE.Group(); const palm = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.46, 0.12), m); palm.position.set(0, 0, 0.06); g.add(palm);
-    for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.22, 3, 8), m); f.position.set(-0.15 + k * 0.1, 0.38 - Math.abs(k - 1.5) * 0.03, 0.06); g.add(f); }
-    const th = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.16, 3, 8), m); th.position.set(0.27, 0.0, 0.07); th.rotation.z = -0.9; g.add(th);
-    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.16, 16), std(0x8a6a30)); cuff.position.set(0, -0.32, 0.06); g.add(cuff); return g; }
+  // Glossy cartoon glove: rounded mitten palm, chubby two-segment fingers, thumb, rolled gold cuff, back stitches.
+  function handGeo(m) { const g = new THREE.Group();
+    const cap = (r, l) => new THREE.CapsuleGeometry(r, l, 6, 14);
+    const palm = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), m); palm.scale.set(0.235, 0.25, 0.1); palm.position.set(0, -0.02, 0.06); g.add(palm);
+    const FL = [0.15, 0.18, 0.17, 0.13], fingers = [];
+    for (let k = 0; k < 4; k++) { const root = new THREE.Group(); const x = -0.15 + k * 0.1, sp = (k - 1.5) * 0.09;
+      root.position.set(x, 0.18 - Math.abs(k - 1.5) * 0.025, 0.06); root.rotation.z = -sp;
+      const p1 = new THREE.Mesh(cap(0.05, FL[k] * 0.55), m); p1.position.y = FL[k] * 0.3 + 0.03; root.add(p1);
+      const j = new THREE.Group(); j.position.y = FL[k] * 0.6 + 0.05; root.add(j);
+      const p2 = new THREE.Mesh(cap(0.047, FL[k] * 0.45), m); p2.position.y = FL[k] * 0.25 + 0.02; j.add(p2);
+      g.add(root); fingers.push(root, j); }
+    const th = new THREE.Group(); th.position.set(0.19, -0.06, 0.07); th.rotation.z = -1.0;
+    const t1 = new THREE.Mesh(cap(0.058, 0.1), m); t1.position.y = 0.08; th.add(t1);
+    const tj = new THREE.Group(); tj.position.y = 0.15; tj.rotation.z = 0.35; th.add(tj);
+    const t2 = new THREE.Mesh(cap(0.052, 0.07), m); t2.position.y = 0.06; tj.add(t2); g.add(th); fingers.push(tj);
+    const st = new THREE.MeshStandardMaterial({ color: 0x8a6a30, roughness: 0.6 });
+    for (let k = 0; k < 3; k++) { const l = new THREE.Mesh(new THREE.CapsuleGeometry(0.008, 0.16, 2, 6), st); l.position.set(-0.07 + k * 0.07, 0.02, 0.158); l.rotation.z = (k - 1) * -0.12; g.add(l); }
+    const gold = new THREE.MeshPhysicalMaterial({ color: 0xd8b25a, metalness: 0.55, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.15 });
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.14, 28, 1, true), gold); cuff.position.set(0, -0.32, 0.06); g.add(cuff);
+    const roll = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.045, 14, 32), gold); roll.rotation.x = Math.PI / 2; roll.position.set(0, -0.39, 0.06); g.add(roll);
+    const wrist = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, 0.12, 24), m); wrist.position.set(0, -0.24, 0.06); g.add(wrist);
+    g.userData.fingers = fingers; return g; }
   function buildTool(k) {
     let g;
-    if (k === 'hand' || k === 'giant') { g = handGeo(std(0xd8b25a, { roughness: 0.45 })); if (k === 'giant') g.scale.setScalar(2.4); }
+    if (k === 'hand' || k === 'giant') { g = handGeo(new THREE.MeshPhysicalMaterial({ color: 0xefd9a4, roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.12, sheen: 0.4, sheenColor: new THREE.Color(0xfff4d6) })); if (k === 'giant') g.scale.setScalar(2.4); }
     else if (k === 'slipper') { g = new THREE.Group(); const sole = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.5, 4, 12), std(0x2f5f7a)); sole.scale.z = 0.22; sole.position.z = 0.04;
       const strap = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.03, 6, 16, Math.PI), std(0x3e7a5a)); strap.position.set(0, 0.2, 0.06); strap.rotation.set(0, Math.PI / 2, 0); strap.rotation.x = Math.PI / 2; g.add(sole, strap); }
     else if (k === 'fish') { g = new THREE.Group(); const m = std(0x6a8a8c, { roughness: 0.2, metalness: 0.2 }); const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 20, 12), m); body.scale.set(0.42, 1, 0.24); body.position.z = 0.12;
@@ -100,7 +118,7 @@ export function initExtras(G) {
       for (let i = 0; i < p.count; i++) { const x = p.getX(i) / 0.45, y = p.getY(i) / 0.3; p.setZ(i, p.getZ(i) * (1 - 0.6 * Math.max(x * x, y * y) ** 2)); } geo.computeVertexNormals();
       const pl = new THREE.Mesh(geo, std(0x56677a, { roughness: 0.9 })); pl.position.z = 0.12; g.add(pl); }
     g.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.castShadow = true; } });
-    const root = new THREE.Group(); root.add(g); root.visible = false; scene.add(root); return root;
+    const root = new THREE.Group(); root.add(g); root.userData.fingers = g.userData.fingers || []; root.visible = false; scene.add(root); return root;
   }
   let tool = TOOLS.includes(ls('gb_tool', 'hand')) ? ls('gb_tool', 'hand') : 'hand'; const tcache = {}; const swings = [];
   function setTool(k) { tool = k; localStorage.setItem('gb_tool', k); $('tool').textContent = '✋ TOOL: ' + TOOL_LABEL[k]; }
@@ -109,7 +127,7 @@ export function initExtras(G) {
   function swing(p, n) {
     const t = tcache[tool] || (tcache[tool] = buildTool(tool));
     const w = mesh.localToWorld(p.clone()), nw = n.clone().transformDirection(mesh.matrixWorld);
-    t.userData = { w, nw, t0: S.t, q: new THREE.Quaternion().setFromUnitVectors(zA, nw) }; t.visible = true;
+    t.userData = { fingers: t.userData.fingers, w, nw, t0: S.t, q: new THREE.Quaternion().setFromUnitVectors(zA, nw) }; t.visible = true;
     if (!swings.includes(t)) swings.push(t); updSwing(t, 0);
   }
   const SW = 0.4;
@@ -117,6 +135,10 @@ export function initExtras(G) {
     const hitA = 0.22, s = a < hitA ? 1 - a / hitA : (a - hitA) / (1 - hitA) * 0.6; // in, then back out
     t.position.copy(u.w).addScaledVector(u.nw, 0.02 + s * 0.9);
     t.quaternion.copy(u.q); t.rotateX(-s * 1.1); t.translateY(-0.15);
+    // wind-up: fingers cocked back on approach, flat on impact, relaxed curl after; quick squash at contact
+    const curl = a < hitA ? -0.35 * s : 0.25 * Math.min(1, (a - hitA) * 4);
+    for (const f of u.fingers || []) f.rotation.x = curl;
+    const imp = Math.max(0, 1 - Math.abs(a - hitA) / 0.08); t.scale.set(1 + 0.12 * imp, 1 - 0.05 * imp, 1 - 0.3 * imp);
     const op = a < 0.6 ? 1 : 1 - (a - 0.6) / 0.4; t.traverse(o => { if (o.isMesh) o.material.opacity = op; }); return true; }
   // ---------- VOICE ----------
   let voiceOn = ls('gb_voice', '1') === '1', lastVoice = -9;
