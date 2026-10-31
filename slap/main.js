@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from './assets/three/GLTFLoader.js';
 import { RoomEnvironment } from './assets/three/RoomEnvironment.js';
-import { Sfx, renderLog } from './sfx.js';
-import { PLACES, getPlace } from './scenes.js';
-import { initExtras } from './extras.js';
+import { Sfx, renderLog } from './sfx.js?v=1793434824';
+import { PLACES, getPlace } from './scenes.js?v=1793434824';
+import { initExtras } from './extras.js?v=1793434824';
 let X = null;
 
 const Q = new URLSearchParams(location.search);

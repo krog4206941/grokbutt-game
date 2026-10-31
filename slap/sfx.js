@@ -88,7 +88,7 @@ export const SYNTH = {
     const n = nsrc(ctx, t, 0.2), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
     const g2 = ctx.createGain(); env(g2, t, 0.002, 0.3 * p.str, 0.1); n.connect(lp).connect(g2).connect(out);
   },
-  pak(ctx, out, t, p) { // tsinelas: dry rubbery "pak"
+  pak(ctx, out, t, p) { // slipper: dry rubbery "pak"
     const n = nsrc(ctx, t, 0.12), bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2600 * (p.pitch || 1); bp.Q.value = 1.4;
     const g = ctx.createGain(); env(g, t, 0.001, 1.0 * (p.str || 1), 0.05); n.connect(bp).connect(g).connect(out);
     const o = ctx.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(420, t); o.frequency.exponentialRampToValueAtTime(180, t + 0.04);
