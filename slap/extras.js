@@ -1,6 +1,6 @@
 // GROKBUTT SLAP extras: WEAR, TOOL, SNAP, CHALLENGE, secret 69, WEATHER, MUSIC, VOICE.
 import * as THREE from 'three';
-import { Music } from './sfx.js';
+import { Music } from './sfx.js?v=1793434824';
 
 const $ = id => document.getElementById(id);
 const ls = (k, d) => { const v = localStorage.getItem(k); return v === null ? d : v; };
@@ -10,7 +10,7 @@ const SITE = 'https://krog4206941.github.io/grokbutt-game/slap/';
 export const WEARS = ['none', 'cap', 'shades', 'crown', 'party', 'pumpkin'];
 const WEAR_LABEL = { none: 'NONE', cap: 'CAP', shades: 'SHADES', crown: 'CROWN', party: 'PARTY HAT', pumpkin: 'PUMPKIN' };
 export const TOOLS = ['hand', 'slipper', 'fish', 'pillow', 'giant'];
-const TOOL_LABEL = { hand: 'HAND', slipper: 'TSINELAS', fish: 'FISH', pillow: 'PILLOW', giant: 'GIANT HAND' };
+const TOOL_LABEL = { hand: 'HAND', slipper: 'SLIPPER', fish: 'FISH', pillow: 'PILLOW', giant: 'GIANT HAND' };
 const TOOL_MUL = { hand: 1, slipper: 1.1, fish: 1, pillow: 0.5, giant: 1.9 };
 
 export function initExtras(G) {
