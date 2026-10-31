@@ -150,6 +150,25 @@ export class Sfx {
       try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.out = chain(this.ctx); this.out.gain.value = this.muted ? 0 : 0.8; } catch (e) { this.ctx = null; }
     }
     if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx && !this.clips) this.loadClips();
+  }
+  // Real CC0 voice clips (see assets/voice/CREDITS.txt); synth 'voice' stays as fallback.
+  loadClips() {
+    this.clips = {}; const ogg = !!document.createElement('audio').canPlayType('audio/ogg; codecs="vorbis"');
+    const G = { kyaa: 0.75, nya1: 1, nya2: 0.9, nya3: 1.15, ouch: 1.2 };
+    for (const n of Object.keys(G)) fetch('./assets/voice/' + n + (ogg ? '.ogg' : '.mp3')).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+      .then(b => this.ctx.decodeAudioData(b)).then(buf => { this.clips[n] = { buf, g: G[n] }; }).catch(() => {});
+  }
+  playVoice(big) { // cute yelp: random clip, ±8% pitch; hard hits prefer kyaa/ouch
+    if (this.log) { this.log.push({ t: this.clock(), name: 'voice', p: { kind: big ? 2 : 0 } }); return; }
+    if (!this.ctx || this.muted || this.ctx.state !== 'running') return;
+    const pool = Object.keys(this.clips || {}).filter(n => !big || n === 'kyaa' || n === 'ouch');
+    const names = pool.length ? pool : Object.keys(this.clips || {});
+    if (!names.length) return this.play('voice', { kind: big ? 2 : (Math.random() < 0.5 ? 0 : 1), pitch: 0.9 + Math.random() * 0.25 });
+    const c = this.clips[names[Math.floor(Math.random() * names.length)]];
+    const src = this.ctx.createBufferSource(); src.buffer = c.buf; src.playbackRate.value = (big ? 1.04 : 1) * (0.92 + Math.random() * 0.16);
+    const g = this.ctx.createGain(); g.gain.value = 0.55 * c.g; src.connect(g).connect(this.out); src.start(this.ctx.currentTime + 0.01);
+    this.lastClip = c;
   }
   setMuted(m) { this.muted = m; localStorage.setItem('gb_muted', m ? '1' : '0'); if (this.out) this.out.gain.value = m ? 0 : 0.8; }
   play(name, p = {}) {

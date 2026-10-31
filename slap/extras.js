@@ -201,7 +201,7 @@ export function initExtras(G) {
     if (tool !== 'hand') sfx.play(tool === 'slipper' ? 'pak' : tool === 'fish' ? 'fish' : tool === 'pillow' ? 'fwump' : 'giant', { str: Math.min(1, str), pitch: 0.9 + Math.random() * 0.2 });
     const big = hard || tool === 'giant';
     if (voiceOn && S.t - lastVoice > 0.35 && (big || Math.random() < 1 / 3)) { lastVoice = S.t; X.voiceCount++;
-      sfx.play('voice', { kind: big ? 2 : (Math.random() < 0.5 ? 0 : 1), pitch: 0.9 + Math.random() * 0.25 }); }
+      sfx.playVoice(big); }
     if (S.slaps === 69 || S.slaps === 690) nice();
   };
   X.update = (dt) => { updWear(dt); for (let i = swings.length - 1; i >= 0; i--) if (!updSwing(swings[i])) swings.splice(i, 1); updNice(dt); updChal(); updWx(dt); };
