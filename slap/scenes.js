@@ -85,6 +85,10 @@ function bedroom() {
   const lamp = new THREE.PointLight(0xffc27a, 9, 9, 1.6); lamp.position.set(5.6, 2.3, -5.2); G.add(lamp);
   mesh(new THREE.BoxGeometry(0.9, 0.6, 0.05), M(0x22282c), 4.2, 1.85, -5.8, G); // monitor
   mesh(new THREE.BoxGeometry(0.8, 0.5, 0.01), M(0x2c5a5c, { emissive: 0x1c4a4c, emissiveIntensity: 0.6 }), 4.2, 1.85, -5.77, G);
+  // night window above the bed (weather: snow falls behind the glass)
+  mesh(new THREE.PlaneGeometry(1.7, 1.4), new THREE.MeshBasicMaterial({ color: 0x18263a }), -3.75, 3.3, -6.48, G);
+  for (const [w, h, x, y] of [[1.9, 0.08, -3.75, 4.04], [1.9, 0.08, -3.75, 2.56], [0.08, 1.56, -4.64, 3.3], [0.08, 1.56, -2.86, 3.3], [0.05, 1.4, -3.75, 3.3], [1.7, 0.05, -3.75, 3.3]])
+    mesh(new THREE.BoxGeometry(w, h, 0.06), M(0x4a3c2c), x, y, -6.4, G);
   // posters: plain shapes
   const posters = [[-1.8, 3.4, 1.6, 2.1, 0x2c4c5a, 0xc0904a], [0.6, 3.7, 1.3, 1.7, 0x5a5a34, 0x3e6a66], [2.6, 3.2, 1.1, 1.4, 0x6a4a2e, 0x2c4c5a]];
   for (const [x, y, w, h, bg, fg] of posters) { mesh(new THREE.BoxGeometry(w, h, 0.03), M(bg), x, y, -6.47, G); mesh(new THREE.BoxGeometry(w * 0.5, w * 0.5, 0.03), M(fg), x, y + h * 0.1, -6.44, G).rotation.z = 0.785; }

@@ -1,4 +1,4 @@
-// GROKBUTT SLAP DEMO - all sounds synthesized with WebAudio (no samples, no voice)
+// GROKBUTT SLAP - all sounds synthesized with WebAudio (no samples, no voice)
 const noiseCache = new WeakMap();
 function noise(ctx) {
   let b = noiseCache.get(ctx);
@@ -88,6 +88,55 @@ export const SYNTH = {
     const n = nsrc(ctx, t, 0.2), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
     const g2 = ctx.createGain(); env(g2, t, 0.002, 0.3 * p.str, 0.1); n.connect(lp).connect(g2).connect(out);
   },
+  pak(ctx, out, t, p) { // tsinelas: dry rubbery "pak"
+    const n = nsrc(ctx, t, 0.12), bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2600 * (p.pitch || 1); bp.Q.value = 1.4;
+    const g = ctx.createGain(); env(g, t, 0.001, 1.0 * (p.str || 1), 0.05); n.connect(bp).connect(g).connect(out);
+    const o = ctx.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(420, t); o.frequency.exponentialRampToValueAtTime(180, t + 0.04);
+    const lp = ctx.createBiquadFilter(); lp.frequency.value = 1500; const g2 = ctx.createGain(); env(g2, t, 0.001, 0.25, 0.04); o.connect(lp).connect(g2).connect(out); o.start(t); o.stop(t + 0.08);
+  },
+  fish(ctx, out, t, p) { // wet floppy fish slap
+    const n = nsrc(ctx, t, 0.3), lp = ctx.createBiquadFilter(); lp.type = 'bandpass'; lp.Q.value = 2.5; lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(300, t + 0.2);
+    const g = ctx.createGain(); env(g, t, 0.002, 0.9 * (p.str || 1), 0.18); n.connect(lp).connect(g).connect(out);
+    for (let k = 0; k < 3; k++) { const o = ctx.createOscillator(); o.type = 'sine'; const tk = t + 0.03 + k * 0.045; o.frequency.setValueAtTime(700 - k * 90, tk); o.frequency.exponentialRampToValueAtTime(260, tk + 0.04);
+      const g2 = ctx.createGain(); env(g2, tk, 0.002, 0.22 - k * 0.05, 0.04); o.connect(g2).connect(out); o.start(tk); o.stop(tk + 0.07); }
+  },
+  fwump(ctx, out, t, p) { // soft pillow
+    const n = nsrc(ctx, t, 0.35), lp = ctx.createBiquadFilter(); lp.frequency.setValueAtTime(700, t); lp.frequency.exponentialRampToValueAtTime(160, t + 0.25);
+    const g = ctx.createGain(); env(g, t, 0.02, 0.7 * (p.str || 1), 0.22); n.connect(lp).connect(g).connect(out);
+  },
+  giant(ctx, out, t, p) { // deep giant-hand thud + slap crack
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.35);
+    const g = ctx.createGain(); env(g, t, 0.003, 1.0, 0.4); o.connect(g).connect(out); o.start(t); o.stop(t + 0.5);
+    SYNTH.slap(ctx, out, t, { str: 1, pitch: 0.7 });
+  },
+  voice(ctx, out, t, p) { // squeaky cartoon yelps via formant filters on a buzzy source (kyaa / itai / squeal)
+    const kind = p.kind || 0, dur = [0.3, 0.32, 0.36][kind], f0 = (p.pitch || 1);
+    const src = ctx.createOscillator(); src.type = 'sawtooth';
+    const F = src.frequency;
+    if (kind === 0) { F.setValueAtTime(700 * f0, t); F.linearRampToValueAtTime(1150 * f0, t + 0.06); F.exponentialRampToValueAtTime(760 * f0, t + dur); }
+    else if (kind === 1) { F.setValueAtTime(820 * f0, t); F.setValueAtTime(980 * f0, t + 0.11); F.exponentialRampToValueAtTime(720 * f0, t + dur); }
+    else { F.setValueAtTime(900 * f0, t); F.exponentialRampToValueAtTime(1900 * f0, t + 0.18); F.exponentialRampToValueAtTime(1100 * f0, t + dur); }
+    const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 11; vg.gain.value = 18 * f0; vib.connect(vg).connect(F); vib.start(t); vib.stop(t + dur);
+    // vowel formant tracks (x1.35 for a tiny cartoon voice): a = 800/1300, i = 330/2500
+    const A = [1080, 1750], I = [450, 3300];
+    const track = kind === 0 ? [[0, I], [0.05, A]] : kind === 1 ? [[0, I], [0.09, A], [0.2, I]] : [[0, I], [0.15, I]];
+    const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.42, t + 0.015);
+    if (kind === 1) { g.gain.setValueAtTime(0.42, t + 0.085); g.gain.linearRampToValueAtTime(0.03, t + 0.1); g.gain.linearRampToValueAtTime(0.4, t + 0.12); }
+    g.gain.setValueAtTime(0.38, t + dur - 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    for (let k = 0; k < 2; k++) { const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = k ? 9 : 6;
+      for (const [dt, f] of track) bp.frequency.linearRampToValueAtTime(f[k], t + dt + 0.001);
+      bp.frequency.setValueAtTime(track[0][1][k], t); const bg = ctx.createGain(); bg.gain.value = k ? 0.9 : 1.2; src.connect(bp).connect(bg).connect(g); }
+    // consonant: k / t click
+    const n = nsrc(ctx, t, 0.03), hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3000; const ng = ctx.createGain(); env(ng, t, 0.001, 0.25, 0.018); n.connect(hp).connect(ng).connect(out);
+    if (kind === 1) { const n2 = nsrc(ctx, t + 0.095, 0.03), h2 = ctx.createBiquadFilter(); h2.type = 'highpass'; h2.frequency.value = 3500; const g2 = ctx.createGain(); env(g2, t + 0.095, 0.001, 0.22, 0.015); n2.connect(h2).connect(g2).connect(out); }
+    g.connect(out); src.start(t); src.stop(t + dur + 0.02);
+  },
+  jingle(ctx, out, t) { // soft bell arpeggio for the secret moment
+    [784, 988, 1175, 1568].forEach((f, i) => { const tt = t + i * 0.11; for (const m of [1, 2.01]) { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f * m;
+      const g = ctx.createGain(); env(g, tt, 0.005, m === 1 ? 0.22 : 0.06, 0.7); o.connect(g).connect(out); o.start(tt); o.stop(tt + 0.8); } });
+  },
+  tick(ctx, out, t, p) { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = p.f || 880; const g = ctx.createGain(); env(g, t, 0.003, 0.15, 0.12); o.connect(g).connect(out); o.start(t); o.stop(t + 0.2); },
 };
 function chain(ctx) {
   const master = ctx.createGain(); master.gain.value = 0.8;
@@ -122,4 +171,35 @@ export async function renderLog(log, dur) {
   for (let i = 0; i < n; i++) { v.setInt16(44 + i * 4, Math.max(-1, Math.min(1, L[i])) * 32767, true); v.setInt16(46 + i * 4, Math.max(-1, Math.min(1, R[i])) * 32767, true); }
   let s = ''; const u = new Uint8Array(ab); for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768));
   return btoa(s);
+}
+// Chill lofi-ish loop (soft pads + gentle beat), scheduled with a small lookahead. Off by default.
+export class Music {
+  constructor(sfx) { this.sfx = sfx; this.on = false; this.timer = null; }
+  start() {
+    const ctx = this.sfx.ctx; if (!ctx || this.on) return; this.on = true;
+    this.bus = ctx.createGain(); this.bus.gain.value = 0.0001; this.bus.gain.exponentialRampToValueAtTime(0.32, ctx.currentTime + 1.5);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; this.bus.connect(lp).connect(this.sfx.out);
+    this.step = 0; this.next = ctx.currentTime + 0.1; const spb = 60 / 72 / 2; // 8th notes at 72 bpm
+    const chords = [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]];
+    const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+    this.timer = setInterval(() => {
+      while (this.next < ctx.currentTime + 0.15) {
+        const t = this.next, s = this.step % 32, bar = Math.floor(this.step / 8) % 4;
+        if (s % 8 === 0) for (const m of chords[bar]) { // pad
+          for (const det of [-4, 4]) { const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = mtof(m); o.detune.value = det;
+            const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.045, t + 0.4); g.gain.linearRampToValueAtTime(0.0001, t + spb * 8 + 0.2);
+            o.connect(g).connect(this.bus); o.start(t); o.stop(t + spb * 8 + 0.3); } }
+        if (s % 8 === 0 || s % 8 === 5) { const o = ctx.createOscillator(); o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12); // kick
+          const g = ctx.createGain(); env(g, t, 0.004, 0.5, 0.22); o.connect(g).connect(this.bus); o.start(t); o.stop(t + 0.3); }
+        if (s % 8 === 4) { const n = nsrc(ctx, t, 0.2), bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1700; bp.Q.value = 0.8; // soft snare
+          const g = ctx.createGain(); env(g, t, 0.004, 0.16, 0.14); n.connect(bp).connect(g).connect(this.bus); }
+        { const n = nsrc(ctx, t, 0.05), hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 6000; // hat
+          const g = ctx.createGain(); env(g, t + (s % 2 ? 0.04 : 0), 0.002, s % 2 ? 0.035 : 0.05, 0.03); n.connect(hp).connect(g).connect(this.bus); }
+        if (s % 4 === 2 && Math.random() < 0.6) { const m = chords[bar][Math.floor(Math.random() * 4)] + 12; const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = mtof(m); // keys
+          const g = ctx.createGain(); env(g, t, 0.01, 0.05, 0.6); o.connect(g).connect(this.bus); o.start(t); o.stop(t + 0.7); }
+        this.next += spb; this.step++;
+      }
+    }, 30);
+  }
+  stop() { if (!this.on) return; this.on = false; clearInterval(this.timer); const ctx = this.sfx.ctx; const b = this.bus; b.gain.cancelScheduledValues(ctx.currentTime); b.gain.setValueAtTime(b.gain.value, ctx.currentTime); b.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6); setTimeout(() => b.disconnect(), 800); }
 }
