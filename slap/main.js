@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from './assets/three/GLTFLoader.js';
 import { RoomEnvironment } from './assets/three/RoomEnvironment.js';
 import { Sfx, renderLog } from './sfx.js';
+import { PLACES, getPlace } from './scenes.js';
 
 const Q = new URLSearchParams(location.search);
 const sfx = new Sfx();
@@ -23,16 +24,32 @@ let camDist = 5.7;
 function fitCam() { const a = innerWidth / innerHeight; camDist = a < 1 ? 5.7 / Math.max(a, 0.5) * 0.8 : 5.7; }
 fitCam();
 
-// stage: dark matte floor + soft spot pool + backdrop
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x0d0e10, roughness: 1, metalness: 0, envMapIntensity: 0.12 }));
-floor.rotation.x = -Math.PI / 2; scene.add(floor);
-const wall = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), new THREE.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 1, envMapIntensity: 0.05 }));
-wall.position.set(0, 15, -14); scene.add(wall);
-const spot = new THREE.SpotLight(0xfff4e0, 30, 30, 0.42, 0.8, 1.6); spot.position.set(0, 9, 0.5); spot.target.position.set(0, 0, 0); scene.add(spot, spot.target);
+// stage: lights shared by every place; the place supplies ground, props, sky, fog and light tints
+const spot = new THREE.SpotLight(0xfff4e0, 22, 30, 0.42, 0.8, 1.6); spot.position.set(0, 9, 0.5); spot.target.position.set(0, 0, 0); scene.add(spot, spot.target);
 const key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(-4, 6, 5); scene.add(key);
 const rim = new THREE.DirectionalLight(0xdfe6ff, 0.3); rim.position.set(4, 3, -5); scene.add(rim);
-scene.add(new THREE.HemisphereLight(0x404450, 0x080808, 0.15));
+const hemi = new THREE.HemisphereLight(0x404450, 0x080808, 0.15); scene.add(hemi);
 scene.fog = new THREE.Fog(0x060709, 9, 22);
+let place = null;
+function setPlace(id) {
+  if (place) scene.remove(place.G);
+  place = getPlace(id); scene.add(place.G);
+  scene.fog.color.set(place.fog[0]); scene.fog.near = place.fog[1]; scene.fog.far = place.fog[2];
+  scene.background = new THREE.Color(place.background ?? place.fog[0]);
+  hemi.color.set(place.hemi[0]); hemi.groundColor.set(place.hemi[1]); hemi.intensity = place.hemi[2];
+  key.color.set(place.key[0]); key.intensity = place.key[1]; rim.color.set(place.rim[0]); rim.intensity = place.rim[1];
+  spot.intensity = place.spot; renderer.toneMappingExposure = place.exposure;
+  try { localStorage.setItem('gb_place', place.id); } catch (e) {}
+  const b = document.getElementById('place'); if (b) b.textContent = '⛰ PLACE: ' + place.label;
+}
+let saved = null; try { saved = localStorage.getItem('gb_place'); } catch (e) {}
+setPlace(Q.get('place') || saved || 'pond');
+function cyclePlace() {
+  const i = PLACES.findIndex(p => p[0] === place.id), next = PLACES[(i + 1) % PLACES.length][0];
+  const f = document.getElementById('fade');
+  if (window.__manual || !f) { setPlace(next); return; }
+  f.style.opacity = 1; setTimeout(() => { setPlace(next); f.style.opacity = 0; }, 380);
+}
 // soft contact shadow
 function radialTex(stops) {
   const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
@@ -40,7 +57,7 @@ function radialTex(stops) {
   g.fillStyle = gr; g.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({ map: radialTex([[0, 'rgba(0,0,0,0.85)'], [0.45, 'rgba(0,0,0,0.5)'], [1, 'rgba(0,0,0,0)']]), transparent: true, depthWrite: false }));
-shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.002; scene.add(shadow);
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.012; scene.add(shadow);
 
 // hierarchy: root (position, throw) > turn (yaw) > pivot (squash/tilt at floor contact) > mesh (y=1)
 const root = new THREE.Group(), turn = new THREE.Group(), pivot = new THREE.Group(); scene.add(root); root.add(turn); turn.add(pivot);
@@ -313,6 +330,7 @@ cv.addEventListener('pointermove', e => { if (ptrs.has(e.pointerId)) ptrs.set(e.
 const endP = e => { ptrs.delete(e.pointerId); up(e.clientX, e.clientY, e.pointerId); };
 cv.addEventListener('pointerup', endP); cv.addEventListener('pointercancel', endP);
 cv.addEventListener('contextmenu', e => e.preventDefault());
+$('place').onclick = () => { sfx.unlock(); sfx.play('whoosh', { str: 0.35 }); cyclePlace(); };
 $('mute').onclick = () => { sfx.unlock(); sfx.setMuted(!sfx.muted); muteLabel(); };
 function muteLabel() { $('mute').textContent = sfx.muted ? '🔇 MUTED' : '🔊 SOUND'; } muteLabel();
 $('turn').onclick = () => { sfx.unlock(); wake(); const back = Math.cos(S.yaw) > 0; S.yawTarget = back ? S.yaw + Math.PI - 1.1 : S.yaw - (Math.PI - 1.1); sfx.play('whoosh', { str: 0.6 }); };
@@ -329,7 +347,7 @@ function throwIt(vx, vy) {
 // ---------- per-frame update ----------
 const _v = new THREE.Vector3();
 function update(dt) {
-  S.t += dt;
+  S.t += dt; if (place) place.update(S.t);
   S.idle += dt;
   // --- body interaction modes
   if (act && (act.kind === 'press' || act.kind === 'drag') && mesh) {
@@ -555,5 +573,6 @@ window.__gb = {
   slapAt(x, y) { const h = hit(x, y); if (h) slap(h.p, h.n); return !!h; },
   hit, down, move, up, ptrs, setYaw(y) { S.yaw = y; S.yawV = 0; S.yawTarget = null; }, setPitch(p) { S.pitch = p; },
   projectLocal(x, y, z) { const v = mesh.localToWorld(new THREE.Vector3(x, y, z)).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; },
+  setPlace, cyclePlace, place: () => place.id,
   startLog() { sfx.log = []; sfx.clock = () => S.t; }, async renderAudio(dur) { return renderLog(sfx.log, dur); },
 };
