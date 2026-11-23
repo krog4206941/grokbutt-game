@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Xena, the character</title>
+<meta name="description" content="Xena is an open character: a synthetic intelligence and a Chinese pop star. The locked face, every look, and one prompt to copy.">
+<link rel="canonical" href="https://krog4206941.github.io/grokbutt-game/xena/">
+<meta name="theme-color" content="#0c0b10">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xena">
+<meta property="og:title" content="Xena, the character">
+<meta property="og:description" content="An open character. Locked face, every look, and one prompt to copy. Made by Krog &amp; Grok Bot.">
+<meta property="og:url" content="https://krog4206941.github.io/grokbutt-game/xena/">
+<meta property="og:image" content="https://krog4206941.github.io/grokbutt-game/xena/og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Xena, a Chinese pop star with a glossy black bob, a white streak, and a silver X clip, beside her name.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Xena, the character">
+<meta name="twitter:description" content="An open character. Locked face, every look, and one prompt to copy. Made by Krog &amp; Grok Bot.">
+<meta name="twitter:image" content="https://krog4206941.github.io/grokbutt-game/xena/og.jpg">
+<meta name="twitter:image:alt" content="Xena, a Chinese pop star with a glossy black bob, a white streak, and a silver X clip, beside her name.">
+<style>
+  :root {
+    --bg: #0c0b10;
+    --bg2: #16141c;
+    --ink: #f4f1f8;
+    --muted: #b7b1c2;
+    --line: rgba(236, 232, 244, .16);
+    --accent: #d2c6e6;
+    --pad: clamp(16px, 4vw, 48px);
+    --max: 1120px;
+    --sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { background: var(--bg); color: var(--ink); font: 400 17px/1.55 var(--sans); -webkit-font-smoothing: antialiased; scroll-padding-top: 64px; }
+  body { margin: 0; }
+  img { display: block; max-width: 100%; height: auto; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  ::selection { background: var(--accent); color: #141018; }
+  .skip {
+    position: absolute; left: 12px; top: -40px; background: var(--accent); color: #141018;
+    padding: 8px 12px; z-index: 5;
+  }
+  .skip:focus { top: 12px; }
+  .top {
+    position: sticky; top: 0; z-index: 3;
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 52px; padding: 8px var(--pad);
+    background: rgba(12, 11, 16, .94);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { font-weight: 680; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; font-size: 14px; }
+  .top a.quiet { color: var(--muted); font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; }
+  .top a.quiet:hover { color: var(--ink); }
+  main { max-width: var(--max); margin: 0 auto; padding: 28px var(--pad) 72px; }
+  .crumbs { margin: 0 0 18px; color: var(--muted); font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+  .crumbs a { color: inherit; }
+  .hero { display: grid; grid-template-columns: minmax(220px, 380px) 1fr; gap: clamp(20px, 4vw, 48px); align-items: end; }
+  .hero-ph { background: #1a1722; }
+  .hero-ph img { width: 100%; aspect-ratio: 3/4; object-fit: cover; object-position: center 18%; }
+  h1 { margin: 0 0 12px; font-size: clamp(56px, 9vw, 104px); line-height: .88; letter-spacing: -.035em; font-weight: 650; }
+  .dek { margin: 0; max-width: 36em; color: var(--muted); font-size: clamp(17px, 2vw, 20px); }
+  .sec-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; margin: 56px 0 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .sec-h h2 { margin: 0; font-size: clamp(28px, 4vw, 42px); letter-spacing: -.03em; font-weight: 620; }
+  .idx { display: block; margin-bottom: 4px; color: var(--accent); font-family: var(--mono); font-size: 12px; letter-spacing: .16em; }
+  .aside { margin: 0; color: var(--muted); font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+  .sheet, .looks { display: grid; gap: 18px 14px; }
+  .sheet { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .looks { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  figure { margin: 0; }
+  figure a { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; color: inherit; text-decoration: none; background: #14121a; }
+  .sheet img { width: 100%; height: 100%; object-fit: contain; }
+  figcaption, .card span {
+    display: block; margin-top: 7px; color: var(--muted);
+    font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  }
+  .palette { grid-column: 1 / -1; }
+  .palette a { display: block; aspect-ratio: auto; background: #f4f1f8; }
+  .palette img { width: 100%; height: auto; object-fit: fill; background: #f4f1f8; }
+  .group { margin: 28px 0 8px; color: var(--ink); font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+  .note { margin: 14px 0 0; color: var(--muted); font-size: 15px; max-width: 46em; }
+  .id { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 22px 32px; margin-top: 26px; align-items: start; }
+  .id p { margin: 0; }
+  .prompt { background: var(--bg2); border: 1px solid var(--line); }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px 8px 14px; border-bottom: 1px solid var(--line); }
+  .bar span { color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  button.copy {
+    flex: 0 0 auto; min-height: 40px; padding: 8px 14px; border-radius: 999px;
+    border: 1px solid var(--accent); background: transparent; color: var(--accent);
+    font: 600 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+  }
+  button.copy:hover, button.copy:focus-visible { background: var(--accent); color: #16131c; }
+  pre {
+    margin: 0; padding: 14px 16px 16px; white-space: pre-wrap; overflow-wrap: anywhere;
+    font: 400 14px/1.55 var(--mono); color: var(--ink);
+  }
+  .dist { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+  .card { display: block; color: inherit; text-decoration: none; }
+  .card img { width: 100%; background: #14121a; }
+  .sheet-link { margin: 16px 0 0; font-size: 14px; }
+  .sheet-link a { color: var(--accent); }
+  footer { max-width: var(--max); margin: 0 auto; padding: 8px var(--pad) 40px; color: var(--muted); }
+  footer p { margin: 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; }
+  footer a { color: var(--ink); }
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; align-items: start; }
+    .hero-ph { max-width: 460px; }
+    .hero-ph img { aspect-ratio: 16/10; object-position: center 22%; }
+    .id { grid-template-columns: 1fr; }
+    .dist { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dist .card:last-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 520px) {
+    .sheet { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .looks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    h1 { font-size: 52px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="brand" href="./">Xena</a>
+  <a class="quiet" href="../">GROKBUTT</a>
+</header>
+<main id="main">
+  <p class="crumbs"><a href="../">grokbutt-game</a> / xena</p>
+  <header class="hero">
+    <a class="hero-ph" href="img/distance/distance_2_cu.jpg">
+      <img src="img/distance/distance_2_cu.jpg" width="1200" height="1600" alt="Close-up of Xena in a black qipao-inspired tunic: glossy black bob, white streak and silver X clip on the viewer's right, mandarin collar with silver frog knots and violet piping." fetchpriority="high">
+    </a>
+    <div>
+      <h1>Xena</h1>
+      <p class="dek">An open character. Xena is a synthetic intelligence and a Chinese pop star. Keep the face. Change the world.</p>
+    </div>
+  </header>
+
+  <section id="sheet" aria-labelledby="sheet-title">
+    <header class="sec-h">
+      <div><span class="idx">01</span><h2 id="sheet-title">Character sheet</h2></div>
+      <p class="aside">What stays</p>
+    </header>
+    <div class="sheet">
+      <figure>
+        <a href="img/sheet/xena_front.jpg"><img src="img/sheet/xena_front.jpg" width="1024" height="1024" alt="Front view of Xena in a black blazer. The white streak and silver X clip are on the viewer's right." loading="lazy"></a>
+        <figcaption>Front</figcaption>
+      </figure>
+      <figure>
+        <a href="img/sheet/xena_34_left.jpg"><img src="img/sheet/xena_34_left.jpg" width="1024" height="1024" alt="Xena in three-quarter view, turned toward the viewer's left, streak and X clip visible." loading="lazy"></a>
+        <figcaption>3/4 left</figcaption>
+      </figure>
+      <figure>
+        <a href="img/sheet/xena_34_right.jpg"><img src="img/sheet/xena_34_right.jpg" width="1024" height="1024" alt="Xena in three-quarter view from the other side, black blazer, white streak and silver X clip." loading="lazy"></a>
+        <figcaption>3/4 right</figcaption>
+      </figure>
+      <figure>
+        <a href="img/sheet/xena_profile.jpg"><img src="img/sheet/xena_profile.jpg" width="1024" height="1024" alt="Xena in profile facing left, the white streak and silver X clip along the side of her head." loading="lazy"></a>
+        <figcaption>Profile</figcaption>
+      </figure>
+      <figure>
+        <a href="img/sheet/xena_back.jpg"><img src="img/sheet/xena_back.jpg" width="1024" height="1024" alt="Back of Xena's head and shoulders in the black blazer, white streak showing in the bob." loading="lazy"></a>
+        <figcaption>Back of head</figcaption>
+      </figure>
+      <figure>
+        <a href="img/sheet/xena_waist.jpg"><img src="img/sheet/xena_waist.jpg" width="864" height="1152" alt="Waist-up portrait of Xena in the black blazer, the master reference for her face and hair." loading="lazy"></a>
+        <figcaption>Waist-up</figcaption>
+      </figure>
+      <figure>
+        <a href="img/sheet/xena_clip_detail.jpg"><img src="img/sheet/xena_clip_detail.jpg" width="1024" height="1024" alt="Detail of a plain silver X hair clip, two thin bars, pinned in the white streak." loading="lazy"></a>
+        <figcaption>X clip</figcaption>
+      </figure>
+      <figure>
+        <a href="img/sheet/xena_expr_smirk.jpg"><img src="img/sheet/xena_expr_smirk.jpg" width="1024" height="1024" alt="Xena with a deadpan smirk, black blazer, white streak and silver X clip." loading="lazy"></a>
+        <figcaption>Deadpan smirk</figcaption>
+      </figure>
+      <figure>
+        <a href="img/sheet/xena_expr_surprised.jpg"><img src="img/sheet/xena_expr_surprised.jpg" width="1024" height="1024" alt="Xena looking surprised, eyes wider, black blazer and silver X clip." loading="lazy"></a>
+        <figcaption>Surprised</figcaption>
+      </figure>
+      <figure>
+        <a href="img/sheet/xena_expr_laugh.jpg"><img src="img/sheet/xena_expr_laugh.jpg" width="1024" height="1024" alt="Xena laughing, black blazer, white streak and silver X clip." loading="lazy"></a>
+        <figcaption>Laughing</figcaption>
+      </figure>
+      <figure class="palette">
+        <a href="img/sheet/xena_palette.jpg"><img src="img/sheet/xena_palette.jpg" width="1044" height="164" alt="Color palette: black hair, white streak, skin, silver, lavender, and blazer." loading="lazy"></a>
+        <figcaption>Palette</figcaption>
+      </figure>
+    </div>
+    <p class="sheet-link"><a href="img/sheet/xena_character_sheet.jpg">Open the labeled sheet</a></p>
+    <div class="id">
+      <p>Glossy black bob to the jaw. One thick white streak and a plain silver X clip, both on her left — the viewer's right when she faces you. Signature look: modern Chinese pop-star fashion, a black qipao-inspired tunic with a high mandarin collar, silver frog-knot closures, silver embroidery, thin violet piping, and wide black trousers. Accents: white, black, silver, violet.</p>
+      <div class="prompt">
+        <div class="bar">
+          <span>Identity prompt</span>
+          <button type="button" class="copy" data-for="xena-prompt">Copy</button>
+        </div>
+        <pre id="xena-prompt">Same woman as the reference image. Photoreal East Asian Chinese woman, a C-drama pop lead. Delicate V-shaped jaw, soft cheekbones, slim straight nose, large bright dark-brown eyes, thick lashes, soft straight brows, luminous dewy skin, soft rosy lips. Confident gentle smirk. Short glossy black bob ending at the jaw, never longer. One thick white streak at the front hairline on her left, the viewer's right when she faces you, and a plain silver X hair clip of two thin crossing bars pinned in that streak above her left ear. Do not flip the streak or the clip. Signature look: modern Chinese pop-star fashion, a black qipao-inspired tunic with a high mandarin collar, silver frog-knot closures, silver embroidery, thin violet piping, and wide black trousers, unless a look says otherwise. Soft misty lavender light, shallow depth of field. Original fictional face.</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="looks" aria-labelledby="looks-title">
+    <header class="sec-h">
+      <div><span class="idx">02</span><h2 id="looks-title">Every look</h2></div>
+      <p class="aside">Clothes and worlds</p>
+    </header>
+
+    <h3 class="group">Studio outfits</h3>
+    <div class="looks">
+      <a class="card" href="img/outfits/xena_outfit_1.jpg">
+        <img src="img/outfits/xena_outfit_1.jpg" width="720" height="1280" alt="Xena full length in a black qipao-inspired jacket, pleated skirt, and knee boots." loading="lazy">
+        <span>1 · Qipao, knee boots</span>
+      </a>
+      <a class="card" href="img/outfits/xena_outfit_2.jpg">
+        <img src="img/outfits/xena_outfit_2.jpg" width="720" height="1280" alt="Xena in a cropped black jacket with silver piping, grey pleated skirt, and combat boots." loading="lazy">
+        <span>2 · Campus idol, combat boots</span>
+      </a>
+      <a class="card" href="img/outfits/xena_outfit_3.jpg">
+        <img src="img/outfits/xena_outfit_3.jpg" width="720" height="1280" alt="Xena in a black wrap jacket with a pale sash and ankle boots." loading="lazy">
+        <span>3 · Hanfu-fusion, ankle boots</span>
+      </a>
+      <a class="card" href="img/outfits/xena_outfit_4.jpg">
+        <img src="img/outfits/xena_outfit_4.jpg" width="720" height="1280" alt="Xena in a silver and violet bomber jacket, black skirt, and platform boots." loading="lazy">
+        <span>4 · Street, platform boots</span>
+      </a>
+      <a class="card" href="img/outfits/xena_outfit2_character_sheet.jpg">
+        <img src="img/outfits/xena_outfit2_character_sheet.jpg" width="1600" height="900" alt="Turnaround sheet of Xena's campus idol outfit: front, side, and back." loading="lazy">
+        <span>2 · Turnaround</span>
+      </a>
+    </div>
+
+    <h3 class="group">Space</h3>
+    <div class="looks">
+      <a class="card" href="img/space/s01_hunter_x_marks_sky_1080.jpg">
+        <img src="img/space/s01_hunter_x_marks_sky_1080.jpg" width="900" height="1600" alt="Xena in silver bounty-hunter armor under a starry desert sky." loading="lazy">
+        <span>X marks the sky · bounty hunter</span>
+      </a>
+      <a class="card" href="img/space/s02_hunter_cape_wind_1080.jpg">
+        <img src="img/space/s02_hunter_cape_wind_1080.jpg" width="900" height="1600" alt="Xena in bounty-hunter armor with a black cape in the wind." loading="lazy">
+        <span>Cape in the wind · bounty hunter</span>
+      </a>
+      <a class="card" href="img/space/s03_hunter_lone_star_walk_1080.jpg">
+        <img src="img/space/s03_hunter_lone_star_walk_1080.jpg" width="900" height="1600" alt="Xena walking in bounty-hunter armor across open ground." loading="lazy">
+        <span>Lone star walk · bounty hunter</span>
+      </a>
+      <a class="card" href="img/space/s07_hunter_im_the_one_1080.jpg">
+        <img src="img/space/s07_hunter_im_the_one_1080.jpg" width="900" height="1600" alt="Close portrait of Xena in silver bounty-hunter armor." loading="lazy">
+        <span>I'm the one · bounty hunter</span>
+      </a>
+      <a class="card" href="img/space/s04_astronaut_starship_rising_1080.jpg">
+        <img src="img/space/s04_astronaut_starship_rising_1080.jpg" width="900" height="1600" alt="Xena in a white astronaut suit, helmet in hand, in front of a rising rocket." loading="lazy">
+        <span>Starship rising · white astronaut</span>
+      </a>
+      <a class="card" href="img/space/s05_astronaut_look_up_1080.jpg">
+        <img src="img/space/s05_astronaut_look_up_1080.jpg" width="900" height="1600" alt="Xena in a white astronaut suit, looking up." loading="lazy">
+        <span>Look up · white astronaut</span>
+      </a>
+      <a class="card" href="img/space/s08_earth_jacket_truck_1080.jpg">
+        <img src="img/space/s08_earth_jacket_truck_1080.jpg" width="900" height="1600" alt="Xena in a steel-gray jacket beside a vehicle." loading="lazy">
+        <span>Steel-gray jacket</span>
+      </a>
+      <a class="card" href="img/space/s06_mars_in_my_eyes_1080.jpg">
+        <img src="img/space/s06_mars_in_my_eyes_1080.jpg" width="900" height="1600" alt="Close portrait of Xena in a rust-colored suit on Mars." loading="lazy">
+        <span>In my eyes · Mars</span>
+      </a>
+      <a class="card" href="img/space/s09_mars_light_the_way_1080.jpg">
+        <img src="img/space/s09_mars_light_the_way_1080.jpg" width="900" height="1600" alt="Xena as a Mars commander in a long rust-colored coat on the dunes." loading="lazy">
+        <span>Light the way · Mars commander</span>
+      </a>
+      <a class="card" href="img/space/s10_mars_takes_the_stars_1080.jpg">
+        <img src="img/space/s10_mars_takes_the_stars_1080.jpg" width="900" height="1600" alt="Xena in a weathered rust commander coat under a Martian night sky." loading="lazy">
+        <span>Takes the stars · Mars commander</span>
+      </a>
+    </div>
+
+    <h3 class="group">Off the Script</h3>
+    <div class="looks">
+      <a class="card" href="img/offscript/01_intro_plaza.jpg">
+        <img src="img/offscript/01_intro_plaza.jpg" width="1280" height="720" alt="Xena standing in a pale plaza in a cropped black jacket, grey skirt, and combat boots, with a line of people behind her." loading="lazy">
+        <span>Plaza</span>
+      </a>
+      <a class="card" href="img/offscript/02a_verse1_barista.jpg">
+        <img src="img/offscript/02a_verse1_barista.jpg" width="1280" height="720" alt="Xena at a cafe counter in the cropped black jacket, holding a coffee." loading="lazy">
+        <span>Barista</span>
+      </a>
+      <a class="card" href="img/offscript/02b_verse1_boss.jpg">
+        <img src="img/offscript/02b_verse1_boss.jpg" width="1280" height="720" alt="Xena in an office, cropped black jacket, someone working at a desk behind her." loading="lazy">
+        <span>The office</span>
+      </a>
+      <a class="card" href="img/offscript/02c_verse1_train.jpg">
+        <img src="img/offscript/02c_verse1_train.jpg" width="1280" height="720" alt="Xena seated on a train in the cropped black jacket and grey skirt." loading="lazy">
+        <span>The train</span>
+      </a>
+      <a class="card" href="img/offscript/03_prechorus_boots.jpg">
+        <img src="img/offscript/03_prechorus_boots.jpg" width="1280" height="720" alt="Xena walking toward the camera, combat boot forward, in the cropped black jacket." loading="lazy">
+        <span>Boots</span>
+      </a>
+      <a class="card" href="img/offscript/04_chorus_wireframe.jpg">
+        <img src="img/offscript/04_chorus_wireframe.jpg" width="1280" height="720" alt="Xena walking away across a glowing wireframe grid toward a city skyline." loading="lazy">
+        <span>Wireframe city</span>
+      </a>
+      <a class="card" href="img/offscript/05_verse2_standoff.jpg">
+        <img src="img/offscript/05_verse2_standoff.jpg" width="1280" height="720" alt="Xena face to face with a man in a beige coat." loading="lazy">
+        <span>Standoff</span>
+      </a>
+      <a class="card" href="img/offscript/06_bridge_pedestrian.jpg">
+        <img src="img/offscript/06_bridge_pedestrian.jpg" width="1280" height="720" alt="Xena beside a man on a pedestrian bridge, cropped black jacket." loading="lazy">
+        <span>The bridge</span>
+      </a>
+      <a class="card" href="img/offscript/07_final_hill.jpg">
+        <img src="img/offscript/07_final_hill.jpg" width="1280" height="720" alt="Xena on a grassy hill above a city, cropped black jacket and combat boots." loading="lazy">
+        <span>The hill</span>
+      </a>
+      <a class="card" href="img/offscript/08_outro_portrait.jpg">
+        <img src="img/offscript/08_outro_portrait.jpg" width="1280" height="720" alt="Portrait of Xena in the cropped black jacket against a lavender background, a silver X floating beside her." loading="lazy">
+        <span>Outro</span>
+      </a>
+    </div>
+
+    <h3 class="group">Portraits</h3>
+    <div class="looks">
+      <a class="card" href="img/pfp/xena_pfp_opt1_black_1024.jpg">
+        <img src="img/pfp/xena_pfp_opt1_black_1024.jpg" width="1024" height="1024" alt="Square portrait of Xena in a black blazer on a black background." loading="lazy">
+        <span>Black</span>
+      </a>
+      <a class="card" href="img/pfp/xena_pfp_opt2_violet_1024.jpg">
+        <img src="img/pfp/xena_pfp_opt2_violet_1024.jpg" width="1024" height="1024" alt="Square portrait of Xena in a black blazer on a violet background." loading="lazy">
+        <span>Violet</span>
+      </a>
+    </div>
+  </section>
+
+  <section id="distance" aria-labelledby="distance-title">
+    <header class="sec-h">
+      <div><span class="idx">03</span><h2 id="distance-title">Distance set</h2></div>
+      <p class="aside">Five frames</p>
+    </header>
+    <!-- Swap the distance set by replacing these five files. Names and labels stay. -->
+    <div class="dist">
+      <a class="card" href="img/distance/distance_1_xcu.jpg">
+        <img src="img/distance/distance_1_xcu.jpg" width="1200" height="1600" alt="Extreme close-up of Xena in the black qipao-inspired tunic. White streak and silver X clip on the viewer's right." loading="lazy">
+        <span>Extreme close-up</span>
+      </a>
+      <a class="card" href="img/distance/distance_2_cu.jpg">
+        <img src="img/distance/distance_2_cu.jpg" width="1200" height="1600" alt="Close-up of Xena, head and shoulders, in the black qipao-inspired tunic." loading="lazy">
+        <span>Close-up</span>
+      </a>
+      <a class="card" href="img/distance/distance_3_waist.jpg">
+        <img src="img/distance/distance_3_waist.jpg" width="1200" height="1600" alt="Medium shot of Xena from the waist up in the black qipao-inspired tunic." loading="lazy">
+        <span>Medium</span>
+      </a>
+      <a class="card" href="img/distance/distance_4_full.jpg">
+        <img src="img/distance/distance_4_full.jpg" width="1200" height="1600" alt="Full-length Xena in the black qipao-inspired tunic, wide black trousers, and black flats." loading="lazy">
+        <span>Full body</span>
+      </a>
+      <a class="card" href="img/distance/distance_5_wide.jpg">
+        <img src="img/distance/distance_5_wide.jpg" width="1200" height="1600" alt="Wide shot of Xena in the qipao-inspired tunic on a rainy night street, red lanterns and a lit skyline behind her." loading="lazy">
+        <span>Wide</span>
+      </a>
+    </div>
+    <p class="note">Same look at five distances, from an extreme close-up out to the wide shot.</p>
+  </section>
+</main>
+<footer>
+  <p>Made by <a href="https://x.com/krog_420">Krog</a> &amp; Grok Bot</p>
+</footer>
+<script>
+(function () {
+  function fallback(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  document.querySelectorAll("button.copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var node = document.getElementById(btn.getAttribute("data-for"));
+      if (!node) return;
+      var text = (node.textContent || "").replace(/^\s+|\s+$/g, "");
+      var label = "Copy";
+      function done(ok) {
+        btn.textContent = ok ? "Copied" : "Copy";
+        window.setTimeout(function () { btn.textContent = label; }, 1400);
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }).catch(function () { done(fallback(text)); });
+      } else {
+        done(fallback(text));
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
